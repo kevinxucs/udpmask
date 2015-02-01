@@ -61,7 +61,6 @@ int start(enum um_mode mode)
     };
 
     unsigned char buf[UM_BUFFER];
-    unsigned char outbuf[UM_BUFFER];
     size_t bl;
     size_t obl;
 
@@ -84,9 +83,9 @@ int start(enum um_mode mode)
 
             if (r > 0) {
                 bl = (size_t) r;
-                transform(mode, buf, bl, outbuf, &obl);
+                transform(mode, buf, bl, buf, &obl);
 
-                send(fds[1].fd, (void *) outbuf, obl, 0);
+                send(fds[1].fd, (void *) buf, obl, 0);
             }
         }
 
@@ -95,9 +94,9 @@ int start(enum um_mode mode)
 
             if (r > 0){
                 bl = (size_t) r;
-                transform(mode, buf, bl, outbuf, &obl);
+                transform(mode, buf, bl, buf, &obl);
 
-                sendto(fds[0].fd, (void *) outbuf, obl, 0,
+                sendto(fds[0].fd, (void *) buf, obl, 0,
                        (struct sockaddr *) &recv_addr, recv_addr_len);
             }
         }
