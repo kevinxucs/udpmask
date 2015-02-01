@@ -27,11 +27,15 @@ static int usage(void)
     return 1;
 }
 
-int transform(enum um_mode mode, unsigned char *buf, size_t buflen)
+int transform(__attribute__((unused)) enum um_mode mode,
+              const unsigned char *buf, size_t buflen,
+              unsigned char *outbuf, size_t *outbuflen)
 {
     for (size_t i = 0; i < buflen; i++) {
-        buf[i] ^= mask[i % mask_len];
+        outbuf[i] = buf[i] ^ mask[i % mask_len];
     }
+
+    *outbuflen = buflen;
 
     return 0;
 }
@@ -40,7 +44,6 @@ int start(enum um_mode mode)
 {
     ssize_t r;
     int pr;
-    size_t bl;
 
     struct sockaddr_in recv_addr;
     socklen_t recv_addr_len = sizeof(recv_addr);
@@ -56,7 +59,11 @@ int start(enum um_mode mode)
             .events = POLLIN
         }
     };
+
     unsigned char buf[UM_BUFFER];
+    unsigned char outbuf[UM_BUFFER];
+    size_t bl;
+    size_t obl;
 
     do {
         fds[0].revents = 0;
@@ -77,9 +84,9 @@ int start(enum um_mode mode)
 
             if (r > 0) {
                 bl = (size_t) r;
-                transform(mode, buf, bl);
+                transform(mode, buf, bl, outbuf, &obl);
 
-                send(fds[1].fd, (void *) buf, bl, 0);
+                send(fds[1].fd, (void *) outbuf, obl, 0);
             }
         }
 
@@ -88,9 +95,9 @@ int start(enum um_mode mode)
 
             if (r > 0){
                 bl = (size_t) r;
-                transform(mode, buf, bl);
+                transform(mode, buf, bl, outbuf, &obl);
 
-                sendto(fds[0].fd, (void *) buf, bl, 0,
+                sendto(fds[0].fd, (void *) outbuf, obl, 0,
                        (struct sockaddr *) &recv_addr, recv_addr_len);
             }
         }
