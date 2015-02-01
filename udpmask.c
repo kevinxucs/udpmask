@@ -23,7 +23,7 @@ static int usage(void)
     "               -c remote -o remote port\n"
     "               [-l listen] [-p listen port]\n"
     "               [-h]\n";
-    write(STDERR_FILENO, ubuf, sizeof(ubuf));
+    fprintf(stderr, ubuf);
     return 1;
 }
 
