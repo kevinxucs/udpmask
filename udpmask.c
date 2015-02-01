@@ -27,8 +27,12 @@ static int usage(void)
     return 1;
 }
 
-int transform(enum um_mode mode, unsigned char *buf)
+int transform(enum um_mode mode, unsigned char *buf, size_t buflen)
 {
+    for (size_t i = 0; i < buflen; i++) {
+        buf[i] ^= mask[i % mask_len];
+    }
+
     return 0;
 }
 
@@ -36,6 +40,7 @@ int start(enum um_mode mode)
 {
     ssize_t r;
     int pr;
+    size_t bl;
 
     struct sockaddr_in recv_addr;
     socklen_t recv_addr_len = sizeof(recv_addr);
@@ -71,9 +76,10 @@ int start(enum um_mode mode)
                          (struct sockaddr *) &recv_addr, &recv_addr_len);
 
             if (r > 0) {
-                transform(mode, buf);
+                bl = (size_t) r;
+                transform(mode, buf, bl);
 
-                send(fds[1].fd, (void *) buf, (size_t) r, 0);
+                send(fds[1].fd, (void *) buf, bl, 0);
             }
         }
 
@@ -81,9 +87,10 @@ int start(enum um_mode mode)
             r = recv(fds[1].fd, (void *) buf, UM_BUFFER, 0);
 
             if (r > 0){
-                transform(mode, buf);
+                bl = (size_t) r;
+                transform(mode, buf, bl);
 
-                sendto(fds[0].fd, (void *) buf, (size_t) r, 0,
+                sendto(fds[0].fd, (void *) buf, bl, 0,
                        (struct sockaddr *) &recv_addr, recv_addr_len);
             }
         }
