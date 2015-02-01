@@ -1,5 +1,5 @@
 CC		= gcc
-CFLAGS	= -Os -Wall
+CFLAGS	= -std=gnu99 -Os -Wall
 OBJS	= udpmask.o
 
 all: udpmask
