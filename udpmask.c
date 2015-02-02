@@ -295,7 +295,7 @@ int main(int argc, char **argv)
             rh = gethostbyname2(optarg, AF_INET);
             if (!rh) {
                 show_usage = 1;
-                perror("gethostbyname2()");
+                herror("gethostbyname2()");
             }
             memcpy(&addr_conn, rh->h_addr_list[0], rh->h_length);
 
