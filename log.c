@@ -8,14 +8,12 @@
 #include "log.h"
 
 const static char *logname;
-static int loglevel;
+static int loglevel = LOG_INFO;
 
 int use_syslog = 0;
 
 void startlog(const char *ident)
 {
-    loglevel = LOG_INFO;
-
     if (use_syslog) {
         openlog(ident, LOG_PID, LOG_USER);
         setlogmask(LOG_UPTO(loglevel));

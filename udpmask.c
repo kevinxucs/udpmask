@@ -30,7 +30,8 @@ static int usage(void)
     "Usage: udpmask -m mode -s mask\n"
     "               -c remote -o remote_port\n"
     "               [-l listen] [-p listen_port]\n"
-    "               [-t timeout] [-h]\n";
+    "               [-t timeout] [-d] [-P pidfile]\n"
+    "               [-h]\n";
     fprintf(stderr, ubuf);
     return 1;
 }
@@ -240,7 +241,6 @@ int start(enum um_mode mode)
 int main(int argc, char **argv)
 {
     int ret = 0;
-    startlog("udpmask");
 
     memset((void *) &conn_addr, 0, sizeof(conn_addr));
     memset((void *) map, 0, sizeof(map));
@@ -254,12 +254,13 @@ int main(int argc, char **argv)
     struct sockaddr_in bind_addr;
     memset((void *) &bind_addr, 0, sizeof(bind_addr));
 
+    const char *pidfile = 0;
     struct hostent * rh;
-    int show_usage = 0;
+    int show_usage = 0, daemonize = 0;
     int c;
     int r;
 
-    while ((c = getopt(argc, argv, "m:p:l:s:c:o:t:h")) != -1) {
+    while ((c = getopt(argc, argv, "m:p:l:s:c:o:t:dP:h")) != -1) {
         switch (c) {
         case 'm':
             if (strcmp(optarg, "server") == 0) {
@@ -282,7 +283,7 @@ int main(int argc, char **argv)
                 show_usage = 1;
             }
             if (r < 0) {
-                log_err("inet_pton(): %s", strerror(errno));
+                perror("inet_pton()");
             }
             break;
 
@@ -294,7 +295,7 @@ int main(int argc, char **argv)
             rh = gethostbyname2(optarg, AF_INET);
             if (!rh) {
                 show_usage = 1;
-                log_err("gethostbyname2(): %s", hstrerror(h_errno));
+                perror("gethostbyname2()");
             }
             memcpy(&addr_conn, rh->h_addr_list[0], rh->h_length);
 
@@ -311,6 +312,14 @@ int main(int argc, char **argv)
             }
             break;
 
+        case 'd':
+            daemonize = 1;
+            break;
+
+        case 'P':
+            pidfile = optarg;
+            break;
+
         case 'h':
         case '?':
         default:
@@ -325,21 +334,19 @@ int main(int argc, char **argv)
 
     bind_sock = NEW_SOCK();
     if (bind_sock < 0) {
-        log_err("socket(): %s", strerror(errno));
+        perror("socket()");
         ret = 1;
         goto exit;
     }
 
     switch (mode) {
     case UM_MODE_SERVER:
-        log_info("Server mode");
         if (port == 0) {
             port = UM_SERVER_PORT;
         }
         break;
 
     case UM_MODE_CLIENT:
-        log_info("Client mode");
         if (port == 0) {
             port = UM_CLIENT_PORT;
         }
@@ -354,6 +361,49 @@ int main(int argc, char **argv)
         ret = usage();
         goto exit;
     }
+
+    if (daemonize) {
+        use_syslog = 1;
+
+        pid_t pid, sid;
+        pid = fork();
+        if (pid < 0) {
+            perror("fork()");
+            ret = 1;
+            goto exit;
+        } else if (pid > 0) {
+            goto exit;
+        }
+
+        sid = setsid();
+        if (sid < 0) {
+            perror("setsid()");
+            ret = 1;
+            goto exit;
+        }
+
+        if (chdir("/") < 0) {
+            perror("chdir()");
+            ret = 1;
+            goto exit;
+        }
+
+        close(STDIN_FILENO);
+        close(STDOUT_FILENO);
+        close(STDERR_FILENO);
+
+        if (!pidfile) {
+            pidfile = "/var/run/udpmask.pid";
+        }
+
+        FILE *fp = fopen(pidfile, "w");
+        if (fp) {
+            fprintf(fp, "%i\n", getpid());
+            fclose(fp);
+        }
+    }
+
+    startlog("udpmask");
 
     bind_addr.sin_family = AF_INET;
     bind_addr.sin_addr = addr;
