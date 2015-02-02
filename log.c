@@ -1,7 +1,7 @@
-#include <syslog.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+#include <syslog.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -57,13 +57,13 @@ void mylog(int priority, const char *message, ...)
     case LOG_INFO:
         loglevel = "INFO";
         break;
-    
+
     case LOG_DEBUG:
     default:
         loglevel = "DEBUG";
         break;
     }
-    
+
     sprintf(tmp, "[%lu] %s[%d]: %s: ", t, logname, getpid(), loglevel);
 
     char out[strlen(tmp) + strlen(message) + 1];

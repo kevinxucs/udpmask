@@ -12,11 +12,11 @@
 #include <sys/select.h>
 #include <sys/socket.h>
 
-#include "udpmask.h"
 #include "log.h"
+#include "udpmask.h"
 
 static int bind_sock = -1;
-static unsigned char *mask = 0;
+static const unsigned char *mask;
 static size_t mask_len = 0;
 static struct sockaddr_in conn_addr;
 static int timeout = UM_TIMEOUT;
@@ -145,7 +145,8 @@ int start(enum um_mode mode)
 
             for (int i = 0; i < ARRAY_SIZE(map); i++) {
                 if (map[i].in_use &&
-                    (map[i].last_use == TIME_INVALID || t - map[i].last_use >= timeout)) {
+                    (map[i].last_use == TIME_INVALID ||
+                     t - map[i].last_use >= timeout)) {
                     map[i].in_use = 0;
                     close(map[i].sock);
 
@@ -193,7 +194,8 @@ int start(enum um_mode mode)
                         connect(tmp_sock, (struct sockaddr *) &conn_addr,
                                 sizeof(conn_addr));
                     } else {
-                        log_warn("Max clients reached. Dropping new connection [%s:%hu]",
+                        log_warn("Max clients reached. "
+                                 "Dropping new connection [%s:%hu]",
                                  inet_ntoa(recv_addr.sin_addr),
                                  ntohs(recv_addr.sin_port));
                     }
@@ -271,8 +273,7 @@ int main(int argc, char **argv)
 
         case 's':
             mask_len = strlen(optarg);
-            mask = (unsigned char *) malloc(mask_len);
-            memcpy((void *) mask, (void *) optarg, mask_len);
+            mask = (unsigned char *) optarg;
             break;
 
         case 'l':
@@ -371,15 +372,12 @@ int main(int argc, char **argv)
     conn_addr.sin_family = AF_INET;
     conn_addr.sin_addr = addr_conn;
     conn_addr.sin_port = htons(port_conn);
-    
+
     log_info("Remote address [%s:%hu]", inet_ntoa(addr_conn), port_conn);
 
     ret = start(mode);
 
 exit:
     endlog();
-    if (mask) {
-        free(mask);
-    }
     return ret;
 }

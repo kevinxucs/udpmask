@@ -18,8 +18,8 @@
 
 enum um_mode {
     UM_MODE_NONE = -1,
-    UM_MODE_SERVER,  
-    UM_MODE_CLIENT 
+    UM_MODE_SERVER,
+    UM_MODE_CLIENT
 };
 
 struct um_sockmap {
