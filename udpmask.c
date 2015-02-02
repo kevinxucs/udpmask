@@ -101,9 +101,9 @@ static void sighanlder(int signum)
     }
 }
 
-int transform(__attribute__((unused)) enum um_mode mode,
-              const unsigned char *buf, size_t buflen,
-              unsigned char *outbuf, size_t *outbuflen)
+static inline int transform(__attribute__((unused)) enum um_mode mode,
+                            const unsigned char *buf, size_t buflen,
+                            unsigned char *outbuf, size_t *outbuflen)
 {
     for (size_t i = 0; i < buflen; i++) {
         outbuf[i] = buf[i] ^ mask[i % mask_len];
