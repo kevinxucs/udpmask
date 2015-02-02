@@ -291,11 +291,12 @@ int main(int argc, char **argv)
 
         case 'l':
             r = inet_pton(AF_INET, optarg, (void *) &addr);
-            if (r != 1) {
+            if (r == 0) {
                 show_usage = 1;
-            }
-            if (r < 0) {
+            } else if (r < 0) {
                 perror("inet_pton()");
+                ret = 1;
+                goto exit;
             }
             break;
 
@@ -306,8 +307,9 @@ int main(int argc, char **argv)
         case 'c':
             rh = gethostbyname2(optarg, AF_INET);
             if (!rh) {
-                show_usage = 1;
                 herror("gethostbyname2()");
+                ret = 1;
+                goto exit;
             } else {
                 memcpy(&addr_conn, rh->h_addr_list[0], rh->h_length);
             }
