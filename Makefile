@@ -13,4 +13,4 @@ udpmask: $(OBJS)
 clean:
 	rm -f udpmask $(OBJS)
 
-.PHONY: all
+.PHONY: all clean
