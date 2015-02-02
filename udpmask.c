@@ -240,6 +240,13 @@ int start(enum um_mode mode)
         }
     }
 
+    for (int i = 0; i < ARRAY_SIZE(map); i++) {
+        if (map[i].in_use) {
+            map[i].in_use = 0;
+            close(map[i].sock);
+        }
+    }
+
     return 0;
 }
 
@@ -439,6 +446,7 @@ int main(int argc, char **argv)
     ret = start(mode);
 
 exit:
+    close(bind_sock);
     endlog();
     return ret;
 }
