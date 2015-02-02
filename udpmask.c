@@ -11,6 +11,7 @@
 #include <netinet/in.h>
 #include <sys/select.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 
 #include "log.h"
 #include "udpmask.h"
@@ -375,6 +376,8 @@ int main(int argc, char **argv)
         } else if (pid > 0) {
             goto exit;
         }
+
+        umask(022);
 
         sid = setsid();
         if (sid < 0) {
