@@ -24,6 +24,7 @@ static int timeout = UM_TIMEOUT;
 static struct um_sockmap map[UM_MAX_CLIENT];
 
 static volatile sig_atomic_t signal_alrm = 0;
+static volatile sig_atomic_t signal_term = 0;
 
 static int usage(void)
 {
@@ -95,6 +96,8 @@ static void sighanlder(int signum)
 {
     if (signum == SIGALRM) {
         signal_alrm = 1;
+    } else {
+        signal_term = 1;
     }
 }
 
@@ -137,7 +140,7 @@ int start(enum um_mode mode)
         alarm(UM_CHK_INTERV);
     }
 
-    while (1) {
+    while (!signal_term) {
         if (signal_alrm) {
             log_debug("SIGALRM");
             t = time(NULL);
@@ -364,6 +367,10 @@ int main(int argc, char **argv)
         ret = usage();
         goto exit;
     }
+
+    signal(SIGHUP, sighanlder);
+    signal(SIGINT, sighanlder);
+    signal(SIGTERM, sighanlder);
 
     if (daemonize) {
         use_syslog = 1;
