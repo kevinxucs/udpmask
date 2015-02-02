@@ -346,7 +346,6 @@ int main(int argc, char **argv)
         break;
 
     default:
-        log_info("Unknown mode");
         show_usage = 1;
         break;
     }
