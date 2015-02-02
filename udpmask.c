@@ -138,9 +138,6 @@ int start(enum um_mode mode)
     }
 
     while (1) {
-        read_fd_set = active_fd_set;
-        si = -1;
-
         if (signal_alrm) {
             log_debug("SIGALRM");
             t = time(NULL);
@@ -151,6 +148,7 @@ int start(enum um_mode mode)
                      t - map[i].last_use >= timeout)) {
                     map[i].in_use = 0;
                     close(map[i].sock);
+                    FD_CLR(map[i].sock, &active_fd_set);
 
                     log_info("Purged connection from [%s:%hu]",
                              inet_ntoa(map[i].from.sin_addr),
@@ -161,6 +159,9 @@ int start(enum um_mode mode)
             signal_alrm = 0;
             alarm(UM_CHK_INTERV);
         }
+
+        read_fd_set = active_fd_set;
+        si = -1;
 
         sr = select(max_sock_fd(), &read_fd_set, NULL, NULL, NULL);
         if (sr <= 0) {
