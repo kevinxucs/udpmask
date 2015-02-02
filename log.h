@@ -3,6 +3,8 @@
 
 #include <syslog.h>
 
+extern int use_syslog;
+
 void startlog(const char *ident);
 void mylog(int priority, const char *message, ...);
 void endlog(void);
