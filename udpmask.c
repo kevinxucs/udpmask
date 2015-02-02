@@ -296,8 +296,9 @@ int main(int argc, char **argv)
             if (!rh) {
                 show_usage = 1;
                 herror("gethostbyname2()");
+            } else {
+                memcpy(&addr_conn, rh->h_addr_list[0], rh->h_length);
             }
-            memcpy(&addr_conn, rh->h_addr_list[0], rh->h_length);
 
             break;
 
