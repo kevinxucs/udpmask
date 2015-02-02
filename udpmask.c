@@ -28,8 +28,8 @@ static int usage(void)
 {
     const char ubuf[] =
     "Usage: udpmask -m mode -s mask\n"
-    "               -c remote -o remote port\n"
-    "               [-l listen] [-p listen port]\n"
+    "               -c remote -o remote_port\n"
+    "               [-l listen] [-p listen_port]\n"
     "               [-t timeout] [-h]\n";
     fprintf(stderr, ubuf);
     return 1;
