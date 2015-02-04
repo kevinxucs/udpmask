@@ -1,6 +1,6 @@
 CC	= cc
-CFLAGS	?= -std=gnu99 -Os -Wall
-OBJS	= udpmask.o log.o
+CFLAGS	= -std=gnu99 -Os -Wall
+OBJS	= udpmask.o log.o transform_xor.o
 
 all: udpmask
 
