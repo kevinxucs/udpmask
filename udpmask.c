@@ -22,6 +22,7 @@ static size_t mask_len = 0;
 static struct sockaddr_in conn_addr;
 static int timeout = UM_TIMEOUT;
 static struct um_sockmap map[UM_MAX_CLIENT];
+static int sock_fd_max = -1;
 
 static volatile sig_atomic_t signal_alrm = 0;
 static volatile sig_atomic_t signal_term = 0;
@@ -38,16 +39,14 @@ static int usage(void)
     return 1;
 }
 
-static inline int max_sock_fd(void)
+static inline void find_sock_fd_max(void)
 {
-    int max_sock = bind_sock;
+    sock_fd_max = bind_sock;
     for (int i = 0; i < ARRAY_SIZE(map); i++) {
-        if (map[i].in_use && map[i].sock > max_sock) {
-            max_sock = map[i].sock;
+        if (map[i].in_use && map[i].sock > sock_fd_max) {
+            sock_fd_max = map[i].sock;
         }
     }
-
-    return max_sock + 1;
 }
 
 static inline int um_sockmap_ins(int sock, struct sockaddr_in *addr)
@@ -153,6 +152,10 @@ int start(enum um_mode mode)
                     close(map[i].sock);
                     FD_CLR(map[i].sock, &active_fd_set);
 
+                    if (map[i].sock >= sock_fd_max) {
+                        find_sock_fd_max();
+                    }
+
                     log_info("Purged connection from [%s:%hu]",
                              inet_ntoa(map[i].from.sin_addr),
                              ntohs(map[i].from.sin_port));
@@ -166,7 +169,7 @@ int start(enum um_mode mode)
         read_fd_set = active_fd_set;
         si = -1;
 
-        sr = select(max_sock_fd(), &read_fd_set, NULL, NULL, NULL);
+        sr = select(sock_fd_max + 1, &read_fd_set, NULL, NULL, NULL);
         if (sr <= 0) {
             log_debug("select() returns %d", sr);
             continue;
@@ -196,10 +199,16 @@ int start(enum um_mode mode)
                     if (tmp_sock < 0) {
                         log_err("socket(): %s", strerror(errno));
                     } else if ((si = um_sockmap_ins(tmp_sock, &recv_addr)) >= 0) {
+                        // Inserted newly created socket into sockmap
                         FD_SET(tmp_sock, &active_fd_set);
                         connect(tmp_sock, (struct sockaddr *) &conn_addr,
                                 sizeof(conn_addr));
+
+                        if (tmp_sock > sock_fd_max) {
+                            sock_fd_max = tmp_sock;
+                        }
                     } else {
+                        // Failed to insert newly created socket into sockmap
                         log_warn("Max clients reached. "
                                  "Dropping new connection [%s:%hu]",
                                  inet_ntoa(recv_addr.sin_addr),
