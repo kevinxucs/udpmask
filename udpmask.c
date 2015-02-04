@@ -14,11 +14,10 @@
 #include <sys/stat.h>
 
 #include "log.h"
+#include "transform.h"
 #include "udpmask.h"
 
 static int bind_sock = -1;
-static const unsigned char *mask;
-static size_t mask_len = 0;
 static struct sockaddr_in conn_addr;
 static int timeout = UM_TIMEOUT;
 static struct um_sockmap map[UM_MAX_CLIENT];
@@ -98,19 +97,6 @@ static void sighanlder(int signum)
     } else {
         signal_term = 1;
     }
-}
-
-static inline int transform(__attribute__((unused)) enum um_mode mode,
-                            const unsigned char *buf, size_t buflen,
-                            unsigned char *outbuf, size_t *outbuflen)
-{
-    for (size_t i = 0; i < buflen; i++) {
-        outbuf[i] = buf[i] ^ mask[i % mask_len];
-    }
-
-    *outbuflen = buflen;
-
-    return 0;
 }
 
 int start(enum um_mode mode)
@@ -249,6 +235,7 @@ int start(enum um_mode mode)
         }
     }
 
+    // Clean up
     for (int i = 0; i < ARRAY_SIZE(map); i++) {
         if (map[i].in_use) {
             map[i].in_use = 0;
