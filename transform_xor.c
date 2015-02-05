@@ -49,13 +49,17 @@ int transform(__attribute__((unused)) enum um_mode mode,
               const unsigned char *buf, size_t buflen,
               unsigned char *outbuf, size_t *outbuflen)
 {
+    /*
     size_t buflen_mul = buflen / MASK_UNIT;
-    size_t mask_len_mul = mask_len / 8;
+    size_t mask_len_mul = mask_len / MASK_UNIT;
 
     for (size_t i = 0; i < buflen_mul; i++) {
         ((uint64_t *) outbuf)[i] = ((uint64_t *) buf)[i] ^
                                    ((uint64_t *) mask)[i % mask_len_mul];
     }
+    */
+
+    size_t buflen_mul = 0;
 
     for (size_t i = buflen_mul * 8; i < buflen; i++) {
         outbuf[i] = buf[i] ^ mask[i % mask_len];
