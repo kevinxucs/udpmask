@@ -1,11 +1,11 @@
-#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "transform.h"
 #include "udpmask.h"
 
-#define MASK_UNIT   8   // 64 bits
+#define mask_unit       unsigned long long
+#define MASK_UNIT_LEN   ((int) sizeof(mask_unit))
 
 unsigned char *mask = NULL;
 size_t mask_len = 0;
@@ -19,13 +19,13 @@ int load_mask(const char *smask)
         return -1;
     }
 
-    int smask_len_mul = smask_len / MASK_UNIT;
+    int smask_len_mul = smask_len / MASK_UNIT_LEN;
 
-    if (smask_len_mul * MASK_UNIT < smask_len) {
+    if (smask_len_mul * MASK_UNIT_LEN < smask_len) {
         smask_len_mul++;
     }
 
-    mask_len = smask_len_mul * MASK_UNIT;
+    mask_len = smask_len_mul * MASK_UNIT_LEN;
 
     mask = (unsigned char *) malloc(mask_len);
 
@@ -49,19 +49,15 @@ int transform(__attribute__((unused)) enum um_mode mode,
               const unsigned char *buf, size_t buflen,
               unsigned char *outbuf, size_t *outbuflen)
 {
-    /*
-    size_t buflen_mul = buflen / MASK_UNIT;
-    size_t mask_len_mul = mask_len / MASK_UNIT;
+    size_t buflen_mul = buflen / MASK_UNIT_LEN;
+    size_t mask_len_mul = mask_len / MASK_UNIT_LEN;
 
     for (size_t i = 0; i < buflen_mul; i++) {
-        ((uint64_t *) outbuf)[i] = ((uint64_t *) buf)[i] ^
-                                   ((uint64_t *) mask)[i % mask_len_mul];
+        ((mask_unit *) outbuf)[i] = ((mask_unit *) buf)[i] ^
+                                    ((mask_unit *) mask)[i % mask_len_mul];
     }
-    */
 
-    size_t buflen_mul = 0;
-
-    for (size_t i = buflen_mul * 8; i < buflen; i++) {
+    for (size_t i = buflen_mul * MASK_UNIT_LEN; i < buflen; i++) {
         outbuf[i] = buf[i] ^ mask[i % mask_len];
     }
 
