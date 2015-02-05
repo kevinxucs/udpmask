@@ -55,10 +55,11 @@ int transform(__attribute__((unused)) enum um_mode mode,
         }
     } else {
         size_t buflen_mul = buflen / MASK_UNIT;
+        size_t mask_len_mul = mask_len / 8;
 
         for (size_t i = 0; i < buflen_mul; i++) {
-           ((uint64_t *) outbuf)[i] = ((uint64_t *) buf)[i] ^
-                                      ((uint64_t *) mask)[i % mask_len];
+            ((uint64_t *) outbuf)[i] = ((uint64_t *) buf)[i] ^
+                                       ((uint64_t *) mask)[i % mask_len_mul];
         }
 
         for (size_t i = buflen_mul * 8; i < buflen; i++) {
