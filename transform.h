@@ -5,6 +5,8 @@
 
 #include "udpmask.h"
 
+extern int mask_loaded;
+
 int load_mask(const char *smask);
 
 void unload_mask(void);

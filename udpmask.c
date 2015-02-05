@@ -343,7 +343,7 @@ int main(int argc, char **argv)
         }
     }
 
-    if (port_conn == 0 || addr_conn.s_addr == 0) {
+    if (!mask_loaded || port_conn == 0 || addr_conn.s_addr == 0) {
         show_usage = 1;
     }
 

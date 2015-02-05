@@ -9,6 +9,7 @@
 
 unsigned char *mask = NULL;
 size_t mask_len = 0;
+int mask_loaded = 0;
 
 int load_mask(const char *smask)
 {
@@ -32,6 +33,8 @@ int load_mask(const char *smask)
         mask[i] = (unsigned char) smask[i % smask_len];
     }
 
+    mask_loaded = 1;
+
     return 0;
 }
 
@@ -39,6 +42,7 @@ void unload_mask(void)
 {
     free(mask);
     mask = NULL;
+    mask_loaded = 0;
 }
 
 int transform(__attribute__((unused)) enum um_mode mode,
@@ -53,8 +57,8 @@ int transform(__attribute__((unused)) enum um_mode mode,
         size_t buflen_mul = buflen / MASK_UNIT;
 
         for (size_t i = 0; i < buflen_mul; i++) {
-            *(((uint64_t *) outbuf) + i) = *(((uint64_t *) buf) + i) ^
-                                           *(((uint64_t *) mask) + (i % mask_len));
+           ((uint64_t *) outbuf)[i] = ((uint64_t *) buf)[i] ^
+                                      ((uint64_t *) mask)[i % mask_len];
         }
 
         for (size_t i = buflen_mul * 8; i < buflen; i++) {
