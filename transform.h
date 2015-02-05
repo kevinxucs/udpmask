@@ -5,8 +5,9 @@
 
 #include "udpmask.h"
 
-extern const unsigned char *mask;
-extern size_t mask_len;
+int load_mask(const char *smask);
+
+void unload_mask(void);
 
 int transform(__attribute__((unused)) enum um_mode mode,
               const unsigned char *buf, size_t buflen,

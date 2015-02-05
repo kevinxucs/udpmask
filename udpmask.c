@@ -281,8 +281,10 @@ int main(int argc, char **argv)
             break;
 
         case 's':
-            mask_len = strlen(optarg);
-            mask = (unsigned char *) optarg;
+            r = load_mask(optarg);
+            if (r < 0) {
+                show_usage = 1;
+            }
             break;
 
         case 'l':
@@ -339,7 +341,7 @@ int main(int argc, char **argv)
         }
     }
 
-    if (mask_len == 0 || port_conn == 0 || addr_conn.s_addr == 0) {
+    if (port_conn == 0 || addr_conn.s_addr == 0) {
         show_usage = 1;
     }
 
@@ -442,6 +444,8 @@ int main(int argc, char **argv)
     log_info("Remote address [%s:%hu]", inet_ntoa(addr_conn), port_conn);
 
     ret = start(mode);
+
+    unload_mask();
 
 exit:
     close(bind_sock);
