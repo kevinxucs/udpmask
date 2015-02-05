@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "log.h"
 #include "transform.h"
 #include "udpmask.h"
 
@@ -13,6 +14,8 @@ int mask_loaded = 0;
 
 int load_mask(const char *smask)
 {
+    log_info("MASK_UNIT_LEN: %d", MASK_UNIT_LEN);
+
     int smask_len = strlen(smask);
 
     if (smask_len < 1) {
