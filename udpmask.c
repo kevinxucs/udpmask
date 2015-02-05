@@ -125,6 +125,8 @@ int start(enum um_mode mode)
         alarm(UM_CHK_INTERV);
     }
 
+    find_sock_fd_max();
+
     while (!signal_term) {
         if (signal_alrm) {
             log_debug("SIGALRM");
