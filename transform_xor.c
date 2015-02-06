@@ -81,7 +81,6 @@ int transform(__attribute__((unused)) enum um_mode mode,
         memcpy((void *) (outbuf + bufplen), (void *) (buf + bufplen), copylen);
     }
 
-
     *outbuflen = buflen;
 
     return 0;
