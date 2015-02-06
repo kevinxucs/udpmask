@@ -22,6 +22,7 @@ static struct sockaddr_in conn_addr;
 static int timeout = UM_TIMEOUT;
 static struct um_sockmap map[UM_MAX_CLIENT];
 static int sock_fd_max = -1;
+static int tlimit = -1;
 
 static volatile sig_atomic_t signal_alrm = 0;
 static volatile sig_atomic_t signal_term = 0;
@@ -33,7 +34,7 @@ static int usage(void)
     "               -c remote -o remote_port\n"
     "               [-l listen] [-p listen_port]\n"
     "               [-t timeout] [-d] [-P pidfile]\n"
-    "               [-h]\n";
+    "               [-L mask limit] [-h]\n";
     fprintf(stderr, ubuf);
     return 1;
 }
@@ -205,7 +206,7 @@ int start(enum um_mode mode)
                 }
 
                 if (si >= 0) {
-                    transform(mode, buf, bl, buf, &obl);
+                    transform(mode, buf, bl, buf, &obl, tlimit);
                     send(map[si].sock, (void *) buf, obl, 0);
 
                     t = time(NULL);
@@ -228,7 +229,7 @@ int start(enum um_mode mode)
                 if (r > 0) {
                     bl = (size_t) r;
 
-                    transform(mode, buf, bl, buf, &obl);
+                    transform(mode, buf, bl, buf, &obl, tlimit);
                     sendto(bind_sock, (void *) buf, obl, 0,
                            (struct sockaddr *) &map[i].from,
                            sizeof(map[i].from));
@@ -270,7 +271,7 @@ int main(int argc, char **argv)
     int c;
     int r;
 
-    while ((c = getopt(argc, argv, "m:p:l:s:c:o:t:dP:h")) != -1) {
+    while ((c = getopt(argc, argv, "m:p:l:s:c:o:t:dP:L:h")) != -1) {
         switch (c) {
         case 'm':
             if (strcmp(optarg, "server") == 0) {
@@ -333,6 +334,10 @@ int main(int argc, char **argv)
 
         case 'P':
             pidfile = optarg;
+            break;
+
+        case 'L':
+            tlimit = atoi(optarg);
             break;
 
         case 'h':

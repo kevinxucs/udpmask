@@ -13,6 +13,7 @@ void unload_mask(void);
 
 int transform(__attribute__((unused)) enum um_mode mode,
               const unsigned char *buf, size_t buflen,
-              unsigned char *outbuf, size_t *outbuflen);
+              unsigned char *outbuf, size_t *outbuflen,
+              int tlimit);
 
 #endif /* _incl_TRANSFORM_H */
