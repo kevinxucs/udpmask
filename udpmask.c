@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <libgen.h>
 #include <netdb.h>
 #include <signal.h>
 #include <stdint.h>
@@ -429,7 +430,7 @@ int main(int argc, char **argv)
         }
     }
 
-    startlog("udpmask");
+    startlog(basename(argv[0]));
 
     bind_addr.sin_family = AF_INET;
     bind_addr.sin_addr = addr;
