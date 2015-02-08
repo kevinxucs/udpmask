@@ -9,7 +9,6 @@
 #define UM_MAX_CLIENT   16
 #define UM_BUFFER       65536
 #define UM_TIMEOUT      300     // 5 minutes
-#define UM_CHK_INTERV   1       // 1 second
 
 #define TIME_INVALID    (time_t) -1
 

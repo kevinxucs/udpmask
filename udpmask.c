@@ -22,10 +22,8 @@ static int bind_sock = -1;
 static struct sockaddr_in conn_addr;
 static int timeout = UM_TIMEOUT;
 static struct um_sockmap map[UM_MAX_CLIENT];
-static int sock_fd_max = -1;
 static int tlimit = -1;
 
-static volatile sig_atomic_t signal_alrm = 0;
 static volatile sig_atomic_t signal_term = 0;
 
 static int usage(void)
@@ -40,7 +38,13 @@ static int usage(void)
     return 1;
 }
 
-static inline void find_sock_fd_max(void)
+/////////////////////////////////////////////////////////////////////
+// sock_fd_max
+/////////////////////////////////////////////////////////////////////
+
+static int sock_fd_max = -1;
+
+static inline void update_sock_fd_max(void)
 {
     sock_fd_max = bind_sock;
     for (int i = 0; i < ARRAY_SIZE(map); i++) {
@@ -49,6 +53,34 @@ static inline void find_sock_fd_max(void)
         }
     }
 }
+
+#define UPDATE_SOCK_FD_MAX_ADD(sock)        \
+    do {                                    \
+        if (sock > sock_fd_max) {           \
+            sock_fd_max = sock;             \
+        }                                   \
+    } while (0)                             \
+
+#define UPDATE_SOCK_FD_MAX_RM(sock)         \
+    do {                                    \
+        if (sock >= sock_fd_max) {          \
+            update_sock_fd_max();           \
+        }                                   \
+    } while (0)                             \
+
+/////////////////////////////////////////////////////////////////////
+
+/////////////////////////////////////////////////////////////////////
+// um_sockmap
+/////////////////////////////////////////////////////////////////////
+
+#define UPDATE_LAST_USE(idx)                    \
+    do {                                        \
+        time_t time_val = time(NULL);           \
+        if (time_val != TIME_INVALID) {         \
+            map[idx].last_use = time_val;       \
+        }                                       \
+    } while (0)                                 \
 
 static inline int um_sockmap_ins(int sock, struct sockaddr_in *addr)
 {
@@ -70,6 +102,39 @@ static inline int um_sockmap_ins(int sock, struct sockaddr_in *addr)
 
     return i;
 }
+
+static inline int um_sockmap_clean(fd_set *active_set)
+{
+    int purged = 0;
+
+    if (timeout <= 0) {
+        return purged;
+    }
+
+    time_t time_val = time(NULL);
+    for (int i = 0; i < ARRAY_SIZE(map); i++) {
+        if (map[i].in_use && (map[i].last_use == TIME_INVALID ||
+            time_val - map[i].last_use >= timeout)) {
+            map[i].in_use = 0;
+            close(map[i].sock);
+            FD_CLR(map[i].sock, active_set);
+
+            UPDATE_SOCK_FD_MAX_RM(map[i].sock);
+
+            log_info("Purged connection from [%s:%hu]",
+                     inet_ntoa(map[i].from.sin_addr),
+                     ntohs(map[i].from.sin_port));
+
+            if (!purged) {
+                purged = 1;
+            }
+        }
+    }
+
+    return purged;
+}
+
+/////////////////////////////////////////////////////////////////////
 
 static inline int sockaddr_in_cmp(struct sockaddr_in *a,
                                   struct sockaddr_in *b)
@@ -94,93 +159,66 @@ static inline int sockaddr_in_cmp(struct sockaddr_in *a,
 
 static void sighanlder(int signum)
 {
-    if (signum == SIGALRM) {
-        signal_alrm = 1;
-    } else {
+    if (signum == SIGHUP || signum == SIGINT || signum == SIGTERM) {
         signal_term = 1;
     }
 }
 
+// Main loop
 int start(enum um_mode mode)
 {
-    ssize_t r;
-    int sr;
-    time_t t;
-    int si;
+    ssize_t ret;
+    int select_ret;
+    int sock_idx;
     int tmp_sock = -1;
 
     struct sockaddr_in recv_addr;
     socklen_t recv_addr_len = sizeof(recv_addr);
 
     unsigned char buf[UM_BUFFER];
-    size_t bl;
-    size_t obl;
+    size_t buflen, outbuflen;
 
     fd_set active_fd_set, read_fd_set;
 
     FD_ZERO(&active_fd_set);
     FD_SET(bind_sock, &active_fd_set);
 
-    if (timeout > 0) {
-        log_info("Connection timeout %d", timeout);
-        signal(SIGALRM, sighanlder);
-        alarm(UM_CHK_INTERV);
-    }
+    log_info("Connection timeout %d", timeout);
 
-    find_sock_fd_max();
+    int clean_up_trigged;
+
+    update_sock_fd_max();
 
     while (!signal_term) {
-        if (signal_alrm) {
-            log_debug("SIGALRM");
-            t = time(NULL);
-
-            for (int i = 0; i < ARRAY_SIZE(map); i++) {
-                if (map[i].in_use &&
-                    (map[i].last_use == TIME_INVALID ||
-                     t - map[i].last_use >= timeout)) {
-                    map[i].in_use = 0;
-                    close(map[i].sock);
-                    FD_CLR(map[i].sock, &active_fd_set);
-
-                    if (map[i].sock >= sock_fd_max) {
-                        find_sock_fd_max();
-                    }
-
-                    log_info("Purged connection from [%s:%hu]",
-                             inet_ntoa(map[i].from.sin_addr),
-                             ntohs(map[i].from.sin_port));
-                }
-            }
-
-            signal_alrm = 0;
-            alarm(UM_CHK_INTERV);
-        }
-
         read_fd_set = active_fd_set;
-        si = -1;
 
-        sr = select(sock_fd_max + 1, &read_fd_set, NULL, NULL, NULL);
-        if (sr <= 0) {
-            log_debug("select() returns %d", sr);
+        sock_idx = -1;
+        clean_up_trigged = 0;
+
+        select_ret = select(sock_fd_max + 1, &read_fd_set, NULL, NULL, NULL);
+        if (select_ret <= 0) {
+            log_debug("select() returns %d", select_ret);
             continue;
         }
 
         if (FD_ISSET(bind_sock, &read_fd_set)) {
-            r = recvfrom(bind_sock, (void *) buf, UM_BUFFER, 0,
-                         (struct sockaddr *) &recv_addr, &recv_addr_len);
+            // Deal with packets from "listening" socket
+            ret = recvfrom(bind_sock, (void *) buf, UM_BUFFER, 0,
+                           (struct sockaddr *) &recv_addr, &recv_addr_len);
 
-            if (r > 0) {
-                bl = (size_t) r;
+            if (ret > 0) {
+                buflen = (size_t) ret;
 
+                // Try to locate existing connection from map
                 for (int i = 0; i < ARRAY_SIZE(map); i++) {
                     if (map[i].in_use &&
                         sockaddr_in_cmp(&recv_addr, &(map[i].from)) == 0) {
-                        si = i;
+                        sock_idx = i;
                         break;
                     }
                 }
 
-                if (si < 0) {
+                if (sock_idx < 0) {
                     log_info("New connection from [%s:%hu]",
                              inet_ntoa(recv_addr.sin_addr),
                              ntohs(recv_addr.sin_port));
@@ -188,54 +226,57 @@ int start(enum um_mode mode)
                     tmp_sock = NEW_SOCK();
                     if (tmp_sock < 0) {
                         log_err("socket(): %s", strerror(errno));
-                    } else if ((si = um_sockmap_ins(tmp_sock, &recv_addr)) >= 0) {
-                        // Inserted newly created socket into sockmap
-                        FD_SET(tmp_sock, &active_fd_set);
-                        connect(tmp_sock, (struct sockaddr *) &conn_addr,
-                                sizeof(conn_addr));
-
-                        if (tmp_sock > sock_fd_max) {
-                            sock_fd_max = tmp_sock;
-                        }
                     } else {
-                        // Failed to insert newly created socket into sockmap
-                        log_warn("Max clients reached. "
-                                 "Dropping new connection [%s:%hu]",
-                                 inet_ntoa(recv_addr.sin_addr),
-                                 ntohs(recv_addr.sin_port));
-                    }
-                }
+                        um_sockmap_clean(&active_fd_set);
+                        clean_up_trigged = 1;
 
-                if (si >= 0) {
-                    transform(mode, buf, bl, buf, &obl, tlimit);
-                    send(map[si].sock, (void *) buf, obl, 0);
-
-                    t = time(NULL);
-                    if (t != TIME_INVALID) {
-                        map[si].last_use = t;
+                        sock_idx = um_sockmap_ins(tmp_sock, &recv_addr);
+                        if (sock_idx >= 0) {
+                            // Inserted newly created socket into sockmap
+                            FD_SET(tmp_sock, &active_fd_set);
+                            connect(tmp_sock, (struct sockaddr *) &conn_addr,
+                                    sizeof(conn_addr));
+                            
+                            UPDATE_SOCK_FD_MAX_ADD(tmp_sock);
+                        } else {
+                            // Failed to insert newly created socket into sockmap
+                            log_warn("Max clients reached. "
+                                     "Dropping new connection [%s:%hu]",
+                                     inet_ntoa(recv_addr.sin_addr),
+                                     ntohs(recv_addr.sin_port));
+                        }
                     }
+                } 
+                
+                // Check sock_idx again to deal with new connection
+                if (sock_idx >= 0) {
+                    transform(mode, buf, buflen, buf, &outbuflen, tlimit);
+                    send(map[sock_idx].sock, (void *) buf, outbuflen, 0);
+
+                    UPDATE_LAST_USE(sock_idx);
                 }
             }
         }
 
         for (int i = 0; i < ARRAY_SIZE(map); i++) {
             if (map[i].in_use && FD_ISSET(map[i].sock, &read_fd_set)) {
-                r = recv(map[i].sock, (void *) buf, UM_BUFFER, 0);
+                ret = recv(map[i].sock, (void *) buf, UM_BUFFER, 0);
 
-                t = time(NULL);
-                if (t != TIME_INVALID) {
-                    map[i].last_use = t;
-                }
+                if (ret > 0) {
+                    UPDATE_LAST_USE(i);
 
-                if (r > 0) {
-                    bl = (size_t) r;
+                    buflen = (size_t) ret;
 
-                    transform(mode, buf, bl, buf, &obl, tlimit);
-                    sendto(bind_sock, (void *) buf, obl, 0,
+                    transform(mode, buf, buflen, buf, &outbuflen, tlimit);
+                    sendto(bind_sock, (void *) buf, outbuflen, 0,
                            (struct sockaddr *) &map[i].from,
                            sizeof(map[i].from));
                 }
             }
+        }
+
+        if (!clean_up_trigged) {
+            um_sockmap_clean(&active_fd_set);
         }
     }
 
