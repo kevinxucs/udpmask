@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "log.h"
 #include "transform.h"
 #include "udpmask.h"
 
@@ -74,7 +73,7 @@ int transform(__attribute__((unused)) enum um_mode mode,
     }
 
     // Copy
-    
+
     size_t copylen = buflen - bufplen;
 
     if (copylen > 0) {

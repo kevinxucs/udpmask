@@ -1,6 +1,6 @@
 CC	= cc
 CFLAGS	= -std=gnu99 -Os -Wall
-OBJS	= udpmask.o log.o 
+OBJS	= udpmask.o log.o
 TESTS	= tests/test_transform_xor
 
 all: udpmask_xor udpmask_add
