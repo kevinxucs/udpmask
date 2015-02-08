@@ -9,7 +9,7 @@ int main(void)
     size_t outbuflen;
 
     load_mask("ABCDEFGH");
-    transform(UM_MODE_SERVER, (unsigned char *) "ABCDEFGHB", 9, outbuf, &outbuflen);
+    transform(UM_MODE_SERVER, (unsigned char *) "ABCDEFGHB", 9, outbuf, &outbuflen, 0);
     unload_mask();
 
     printf("outbuflen: %lu\n", outbuflen);
