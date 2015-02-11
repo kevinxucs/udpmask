@@ -136,8 +136,8 @@ static inline int um_sockmap_clean(fd_set *active_set)
 
 /////////////////////////////////////////////////////////////////////
 
-static inline int sockaddr_in_cmp(struct sockaddr_in *a,
-                                  struct sockaddr_in *b)
+static inline int sockaddr_in_cmp(const struct sockaddr_in *a,
+                                  const struct sockaddr_in *b)
 {
     int af_cmp = a->sin_family - b->sin_family;
     if (af_cmp != 0) {
