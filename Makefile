@@ -18,6 +18,6 @@ test: $(TESTS)
 	$(foreach test_cmd,$(TESTS),$(test_cmd))
 
 clean:
-	rm -f udpmask_xor udpmask_add $(TESTS) *.o
+	rm -f udpmask_xor $(TESTS) *.o
 
 .PHONY: all clean test
