@@ -3,12 +3,9 @@ CFLAGS	= -std=gnu99 -Os -Wall
 OBJS	= udpmask.o log.o
 TESTS	= tests/test_transform_xor
 
-all: udpmask_xor udpmask_add
+all: udpmask_xor
 
 udpmask_xor: $(OBJS) transform_xor.o
-	$(CC) $(CFLAGS) -o $@ $^
-
-udpmask_add: $(OBJS) transform_add.o
 	$(CC) $(CFLAGS) -o $@ $^
 
 %.o: %.c
