@@ -74,6 +74,10 @@ int transform(__attribute__((unused)) enum um_mode mode,
 
     // Copy
 
+    if (buf == outbuf) {
+        return 0;
+    }
+
     size_t copylen = buflen - bufplen;
 
     if (copylen > 0) {
