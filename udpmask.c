@@ -250,7 +250,7 @@ int start(enum um_mode mode)
                 
                 // Check sock_idx again to deal with new connection
                 if (sock_idx >= 0) {
-                    transform(mode, buf, buflen, tlimit);
+                    transform(buf, buflen, tlimit);
                     send(map[sock_idx].sock, (void *) buf, buflen, 0);
 
                     UPDATE_LAST_USE(sock_idx);
@@ -267,7 +267,7 @@ int start(enum um_mode mode)
 
                     buflen = (size_t) ret;
 
-                    transform(mode, buf, buflen, tlimit);
+                    transform(buf, buflen, tlimit);
                     sendto(bind_sock, (void *) buf, buflen, 0,
                            (struct sockaddr *) &map[i].from,
                            sizeof(map[i].from));

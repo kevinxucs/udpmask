@@ -2,7 +2,6 @@
 #include <string.h>
 
 #include "transform.h"
-#include "udpmask.h"
 
 #define mask_unit       unsigned int
 #define MASK_UNIT_LEN   ((int) sizeof(mask_unit))
@@ -45,8 +44,7 @@ void unload_mask(void)
     mask_loaded = 0;
 }
 
-int transform(__attribute__((unused)) enum um_mode mode,
-              unsigned char *buf, size_t buflen, int tlimit)
+int transform(unsigned char *buf, size_t buflen, int tlimit)
 {
     size_t bufplen;
 
