@@ -4,7 +4,7 @@
 #include "transform.h"
 #include "udpmask.h"
 
-#define mask_unit       unsigned long long
+#define mask_unit       unsigned int
 #define MASK_UNIT_LEN   ((int) sizeof(mask_unit))
 
 unsigned char *mask = NULL;
