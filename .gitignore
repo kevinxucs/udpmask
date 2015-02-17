@@ -1,4 +1,3 @@
 *.o
-udpmask_xor
-udpmask_add
-tests/test_transform_xor
+udpmask
+tests/test_transform
