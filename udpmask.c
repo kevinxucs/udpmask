@@ -176,7 +176,7 @@ int start(enum um_mode mode)
     socklen_t recv_addr_len = sizeof(recv_addr);
 
     unsigned char buf[UM_BUFFER];
-    size_t buflen, outbuflen;
+    size_t buflen;
 
     fd_set active_fd_set, read_fd_set;
 
@@ -250,8 +250,8 @@ int start(enum um_mode mode)
                 
                 // Check sock_idx again to deal with new connection
                 if (sock_idx >= 0) {
-                    transform(mode, buf, buflen, buf, &outbuflen, tlimit);
-                    send(map[sock_idx].sock, (void *) buf, outbuflen, 0);
+                    transform(mode, buf, buflen, tlimit);
+                    send(map[sock_idx].sock, (void *) buf, buflen, 0);
 
                     UPDATE_LAST_USE(sock_idx);
                 }
@@ -267,8 +267,8 @@ int start(enum um_mode mode)
 
                     buflen = (size_t) ret;
 
-                    transform(mode, buf, buflen, buf, &outbuflen, tlimit);
-                    sendto(bind_sock, (void *) buf, outbuflen, 0,
+                    transform(mode, buf, buflen, tlimit);
+                    sendto(bind_sock, (void *) buf, buflen, 0,
                            (struct sockaddr *) &map[i].from,
                            sizeof(map[i].from));
                 }

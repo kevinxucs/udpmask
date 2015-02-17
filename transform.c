@@ -46,9 +46,7 @@ void unload_mask(void)
 }
 
 int transform(__attribute__((unused)) enum um_mode mode,
-              const unsigned char *buf, size_t buflen,
-              unsigned char *outbuf, size_t *outbuflen,
-              int tlimit)
+              unsigned char *buf, size_t buflen, int tlimit)
 {
     size_t bufplen;
 
@@ -68,7 +66,7 @@ int transform(__attribute__((unused)) enum um_mode mode,
         size_t i = maski;
         size_t chunki = 0;
         while (chunki < bufplen_mask_chunk) {
-            ((mask_unit *) outbuf)[i] = ((mask_unit *) buf)[i] ^ mask_ab;
+            ((mask_unit *) buf)[i] ^= mask_ab;
 
             i += bufplen_mask_chunk;
             chunki++;
@@ -76,21 +74,7 @@ int transform(__attribute__((unused)) enum um_mode mode,
     }
 
     for (size_t i = bufplen_mask_chunk * mask_len; i < bufplen; i++) {
-        outbuf[i] = buf[i] ^ mask[i % mask_len];
-    }
-
-    // Copy
-
-    *outbuflen = buflen;
-
-    if (buf == outbuf) {
-        return 0;
-    }
-
-    size_t copylen = buflen - bufplen;
-
-    if (copylen > 0) {
-        memcpy((void *) (outbuf + bufplen), (void *) (buf + bufplen), copylen);
+        buf[i] ^= mask[i % mask_len];
     }
 
     return 0;
