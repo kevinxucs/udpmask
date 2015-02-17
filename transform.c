@@ -74,6 +74,8 @@ int transform(__attribute__((unused)) enum um_mode mode,
 
     // Copy
 
+    *outbuflen = buflen;
+
     if (buf == outbuf) {
         return 0;
     }
@@ -83,8 +85,6 @@ int transform(__attribute__((unused)) enum um_mode mode,
     if (copylen > 0) {
         memcpy((void *) (outbuf + bufplen), (void *) (buf + bufplen), copylen);
     }
-
-    *outbuflen = buflen;
 
     return 0;
 }
