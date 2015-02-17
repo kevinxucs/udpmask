@@ -64,11 +64,11 @@ int transform(__attribute__((unused)) enum um_mode mode,
     size_t bufplen_mask_chunk = bufplen / mask_len;
 
     for (size_t maski = 0; maski < mask_len_mul; maski++) {
+        mask_unit mask_ab = ((mask_unit *) mask)[maski];
         size_t i = maski;
         size_t chunki = 0;
         while (chunki < bufplen_mask_chunk) {
-            ((mask_unit *) outbuf)[i] = ((mask_unit *) buf)[i] ^
-                                        ((mask_unit *) mask)[maski];
+            ((mask_unit *) outbuf)[i] = ((mask_unit *) buf)[i] ^ mask_ab;
 
             i += bufplen_mask_chunk;
             chunki++;
