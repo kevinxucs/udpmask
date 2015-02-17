@@ -2,10 +2,11 @@ CC	= cc
 CFLAGS	= -std=gnu99 -Os -Wall
 OBJS	= udpmask.o log.o transform.o
 TESTS	= tests/test_transform
+EXEC	= udpmask
 
-all: udpmask
+all: $(EXEC)
 
-udpmask: $(OBJS)
+$(EXEC): $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $^
 
 %.o: %.c
@@ -18,6 +19,6 @@ test: $(TESTS)
 	$(foreach test_cmd,$(TESTS),$(test_cmd))
 
 clean:
-	rm -f udpmask $(TESTS) *.o
+	rm -f $(EXEC) $(TESTS) *.o
 
 .PHONY: all clean test
