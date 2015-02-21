@@ -1,4 +1,4 @@
-CC	= cc
+CC	= gcc
 CFLAGS	= -std=gnu99 -Os -Wall
 OBJS	= udpmask.o log.o transform.o
 TESTS	= tests/test_transform
