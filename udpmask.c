@@ -1,22 +1,8 @@
-#include <errno.h>
-#include <libgen.h>
-#include <netdb.h>
-#include <signal.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#include <unistd.h>
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <sys/select.h>
-#include <sys/socket.h>
-#include <sys/stat.h>
+#include "udpmask.h"
 
 #include "log.h"
 #include "transform.h"
-#include "udpmask.h"
+#include "compat/compat.h"
 
 static int bind_sock = -1;
 static struct sockaddr_in conn_addr;
@@ -116,7 +102,7 @@ static inline int um_sockmap_clean(fd_set *active_set)
         if (map[i].in_use && (map[i].last_use == TIME_INVALID ||
             time_val - map[i].last_use >= timeout)) {
             map[i].in_use = 0;
-            close(map[i].sock);
+            socket_close(map[i].sock);
             FD_CLR(map[i].sock, active_set);
 
             UPDATE_SOCK_FD_MAX_RM(map[i].sock);
@@ -284,7 +270,7 @@ int start(enum um_mode mode)
     for (int i = 0; i < ARRAY_SIZE(map); i++) {
         if (map[i].in_use) {
             map[i].in_use = 0;
-            close(map[i].sock);
+            socket_close(map[i].sock);
         }
     }
 
@@ -294,6 +280,11 @@ int start(enum um_mode mode)
 int main(int argc, char **argv)
 {
     int ret = 0;
+
+#ifdef WIN32
+    WSADATA wsaData = {0};
+    WSAStartup(MAKEWORD(2, 2), &wsaData);
+#endif
 
     memset((void *) &conn_addr, 0, sizeof(conn_addr));
     memset((void *) map, 0, sizeof(map));
@@ -348,9 +339,11 @@ int main(int argc, char **argv)
             break;
 
         case 'c':
-            rh = gethostbyname2(optarg, AF_INET);
+            rh = gethostbyname(optarg);
             if (!rh) {
+#ifndef WIN32
                 herror("gethostbyname2()");
+#endif
                 ret = 1;
                 goto exit;
             } else {
@@ -370,9 +363,11 @@ int main(int argc, char **argv)
             }
             break;
 
+#ifndef WIN32
         case 'd':
             daemonize = 1;
             break;
+#endif
 
         case 'P':
             pidfile = optarg;
@@ -428,10 +423,11 @@ int main(int argc, char **argv)
     signal(SIGINT, sighanlder);
     signal(SIGTERM, sighanlder);
 
+#ifndef WIN32
     if (daemonize) {
         use_syslog = 1;
 
-        pid_t pid, sid;
+        pid_t pid;
         pid = fork();
         if (pid < 0) {
             perror("fork()");
@@ -443,6 +439,7 @@ int main(int argc, char **argv)
 
         umask(022);
 
+        pid_t sid;
         sid = setsid();
         if (sid < 0) {
             perror("setsid()");
@@ -470,6 +467,7 @@ int main(int argc, char **argv)
             fclose(fp);
         }
     }
+#endif
 
     startlog(basename(argv[0]));
 
@@ -497,7 +495,7 @@ int main(int argc, char **argv)
     unload_mask();
 
 exit:
-    close(bind_sock);
+    socket_close(bind_sock);
     endlog();
     return ret;
 }

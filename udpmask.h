@@ -1,8 +1,29 @@
 #ifndef _incl_UDPMASK_H
 #define _incl_UDPMASK_H
 
+#include <errno.h>
+#include <libgen.h>
+#include <signal.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <time.h>
+#include <unistd.h>
+#include <sys/stat.h>
+
+#ifndef WIN32
+#include <netdb.h>
+#include <arpa/inet.h>
 #include <netinet/in.h>
+#include <sys/select.h>
+#include <sys/socket.h>
+#else
+#include <winsock2.h>
+#include <ws2tcpip.h>
+
+#define SIGHUP          1
+#endif
 
 #define UM_SERVER_PORT  51194
 #define UM_CLIENT_PORT  61194

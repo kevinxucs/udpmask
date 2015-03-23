@@ -1,3 +1,5 @@
 *.o
 udpmask
+udpmask.exe
+compat/libcompat.a
 tests/test_transform
