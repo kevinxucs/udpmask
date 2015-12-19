@@ -6,7 +6,13 @@
 #define MASK_BASE_UNIT  unsigned int
 #define MASK_BASE_LEN   ((int) sizeof(MASK_BASE_UNIT))
 
-#ifdef __SSE2__
+#ifdef __AVX2__
+
+#include <immintrin.h>
+#define MASK_UNIT       __m256i
+#define XOR_FUNC(a, b)  (_mm256_xor_si256((a), (b)))
+
+#elif __SSE2__
 
 #include <emmintrin.h>
 #define MASK_UNIT       __m128i
