@@ -3,11 +3,7 @@
 
 #include "transform.h"
 
-#define mask_unit       unsigned int
-#define MASK_UNIT_LEN   ((int) sizeof(mask_unit))
-
 unsigned char *mask = NULL;
-size_t mask_len = 0;
 int mask_loaded = 0;
 
 int load_mask(const char *smask)
@@ -18,11 +14,12 @@ int load_mask(const char *smask)
         return -1;
     }
 
-    mask_len = MASK_UNIT_LEN;
-    mask = (unsigned char *) malloc(mask_len);
+    mask = (unsigned char *) malloc(MASK_LEN);
 
-    for (size_t i = 0; i < mask_len; i++) {
-        mask[i] = (unsigned char) smask[i % smask_len];
+    for (size_t i = 0; i < MASK_LEN / MASK_BASE_LEN; i++) {
+        for (size_t j = 0; j < MASK_BASE_LEN; j++) {
+            mask[i * MASK_BASE_LEN + j] = (unsigned char) smask[j % smask_len];
+        }
     }
 
     mask_loaded = 1;
@@ -49,13 +46,13 @@ int transform(unsigned char *buf, size_t buflen, int tlimit)
 
     // Mask
 
-    size_t bufplen_mask_chunk = bufplen / mask_len;
+    size_t bufplen_mask_chunk = bufplen / MASK_LEN;
     for (size_t i = 0; i < bufplen_mask_chunk; i++) {
-        ((mask_unit *) buf)[i] ^= *((mask_unit *) mask);
+        ((MASK_UNIT *) buf)[i] = XOR_FUNC(((MASK_UNIT *) buf)[i], *((MASK_UNIT *) mask));
     }
 
-    for (size_t i = bufplen_mask_chunk * mask_len; i < bufplen; i++) {
-        buf[i] ^= mask[i % mask_len];
+    for (size_t i = bufplen_mask_chunk * MASK_LEN; i < bufplen; i++) {
+        buf[i] ^= mask[i % MASK_LEN];
     }
 
     return 0;
