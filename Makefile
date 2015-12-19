@@ -1,5 +1,5 @@
 CC	= gcc
-CFLAGS	= -std=gnu99 -Os -Wall
+CFLAGS	:= $(CFLAGS) -std=gnu99 -O2 -Wall
 OBJS	= udpmask.o log.o transform.o
 TESTS	= tests/test_transform
 EXEC	= udpmask
