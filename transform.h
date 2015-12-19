@@ -9,7 +9,7 @@
 #ifdef __SSE2__
 
 #include <emmintrin.h>
-#define MASK_UNIT       __m128
+#define MASK_UNIT       __m128i
 #define XOR_FUNC(a, b)  (_mm_xor_si128((a), (b)))
 
 #else
