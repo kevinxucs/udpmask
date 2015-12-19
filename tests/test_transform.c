@@ -5,17 +5,15 @@
 
 int main(void)
 {
-    unsigned char outbuf[1024];
-    size_t outbuflen;
+    unsigned char buf[1024] = "ABCDEFGHB";
+    size_t buflen = 9;
 
     load_mask("ABCDEFGH");
-    transform(UM_MODE_SERVER, (unsigned char *) "ABCDEFGHB", 9, outbuf, &outbuflen, 0);
+    transform(buf, buflen, -1);
     unload_mask();
 
-    printf("outbuflen: %lu\n", outbuflen);
-
-    for (size_t i = 0; i < outbuflen; i++) {
-        printf("0x%02X ", outbuf[i]);
+    for (size_t i = 0; i < buflen; i++) {
+        printf("0x%02X ", buf[i]);
     }
 
     printf("\n");
