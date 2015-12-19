@@ -18,14 +18,7 @@ int load_mask(const char *smask)
         return -1;
     }
 
-    int smask_len_mul = smask_len / MASK_UNIT_LEN;
-
-    if (smask_len_mul * MASK_UNIT_LEN < smask_len) {
-        smask_len_mul++;
-    }
-
-    mask_len = smask_len_mul * MASK_UNIT_LEN;
-
+    mask_len = MASK_UNIT_LEN;
     mask = (unsigned char *) malloc(mask_len);
 
     for (size_t i = 0; i < mask_len; i++) {
@@ -56,19 +49,9 @@ int transform(unsigned char *buf, size_t buflen, int tlimit)
 
     // Mask
 
-    size_t mask_len_mul = mask_len / MASK_UNIT_LEN;
     size_t bufplen_mask_chunk = bufplen / mask_len;
-
-    for (size_t maski = 0; maski < mask_len_mul; maski++) {
-        mask_unit mask_ab = ((mask_unit *) mask)[maski];
-        size_t i = maski;
-        size_t chunki = 0;
-        while (chunki < bufplen_mask_chunk) {
-            ((mask_unit *) buf)[i] ^= mask_ab;
-
-            i += bufplen_mask_chunk;
-            chunki++;
-        }
+    for (size_t i = 0; i < bufplen_mask_chunk; i++) {
+        ((mask_unit *) buf)[i] ^= *((mask_unit *) mask);
     }
 
     for (size_t i = bufplen_mask_chunk * mask_len; i < bufplen; i++) {
