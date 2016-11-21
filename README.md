@@ -7,11 +7,11 @@ packet inspection.
 
 Server side
 
-    udpmask -m server -s "your-secret-key" -c host-to-transfer-traffic-to -o port-to-transfer-traffic-to -p 51194
+    udpmask -m server -c host-to-transfer-traffic-to -o port-to-transfer-traffic-to -p 51194
 
 Client side
 
-    udpmask -m client -s "your-secret-key" -c udpmask-server-host -o 51194 -p 61194
+    udpmask -m client -c udpmask-server-host -o 51194 -p 61194
 
 On client side, configure the software you wants to obfuscate traffic for to
 connect to localhost:61194.
