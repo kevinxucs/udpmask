@@ -1,39 +1,29 @@
 #ifndef _incl_TRANSFORM_H
 #define _incl_TRANSFORM_H
 
+#include <stdint.h>
 #include <stdlib.h>
+#include <time.h>
 
-#define MASK_BASE_UNIT  unsigned int
-#define MASK_BASE_LEN   ((int) sizeof(MASK_BASE_UNIT))
-
-//#ifdef __AVX2__
-//
-//#include <immintrin.h>
-//#define MASK_UNIT       __m256i
-//#define XOR_FUNC(a, b)  (_mm256_xor_si256((a), (b)))
-//
-//#elif __SSE2__
-//
-//#include <emmintrin.h>
-//#define MASK_UNIT       __m128i
-//#define XOR_FUNC(a, b)  (_mm_xor_si128((a), (b)))
-//
-//#else
-
-#define MASK_UNIT       MASK_BASE_UNIT
-#define XOR_FUNC(a, b)  ((a) ^ (b))
-
-//#endif
-
+#define MASK_UNIT       uint32_t
 #define MASK_LEN        ((int) sizeof(MASK_UNIT))
+#define MASK_TIMEOUT    ((time_t) 60)
 
+#define transform(buf, buflen, m)                               \
+    do {                                                        \
+        size_t c = buflen / MASK_LEN;                           \
+        for (size_t i = 0; i < c; i++) {                        \
+            ((MASK_UNIT *) buf)[i] ^= *((MASK_UNIT *) m);       \
+        }                                                       \
+        for (size_t i = c * MASK_LEN; i < buflen; i++) {        \
+            buf[i] ^= m[i % MASK_LEN];                          \
+        }                                                       \
+    } while (0)                                                 \
 
-extern int mask_loaded;
+void check_gen_mask();
+size_t maskbuf(unsigned char *, size_t);
+size_t unmaskbuf(unsigned char *, size_t);
 
-int load_mask(const char *smask);
-
-void unload_mask(void);
-
-int transform(unsigned char *buf, size_t buflen, int tlimit);
+typedef size_t (*buf_func)(unsigned char *, size_t);
 
 #endif /* _incl_TRANSFORM_H */

@@ -22,7 +22,6 @@ static int bind_sock = -1;
 static struct sockaddr_in conn_addr;
 static int timeout = UM_TIMEOUT;
 static struct um_sockmap map[UM_MAX_CLIENT];
-static int tlimit = -1;
 
 static volatile sig_atomic_t signal_term = 0;
 
@@ -178,6 +177,20 @@ int start(enum um_mode mode)
     unsigned char buf[UM_BUFFER];
     size_t buflen;
 
+    buf_func snd_buf_func;
+    buf_func rcv_buf_func;
+
+    if (mode == UM_MODE_SERVER) {
+        snd_buf_func = &unmaskbuf;
+        rcv_buf_func = &maskbuf;
+    } else if (mode == UM_MODE_CLIENT) {
+        snd_buf_func = &maskbuf;
+        rcv_buf_func = &unmaskbuf;
+    } else {
+        log_err("Unknown mode");
+        return 1;
+    }
+
     fd_set active_fd_set, read_fd_set;
 
     FD_ZERO(&active_fd_set);
@@ -250,7 +263,7 @@ int start(enum um_mode mode)
                 
                 // Check sock_idx again to deal with new connection
                 if (sock_idx >= 0) {
-                    transform(buf, buflen, tlimit);
+                    buflen = (*snd_buf_func)(buf, buflen);
                     send(map[sock_idx].sock, (void *) buf, buflen, 0);
 
                     UPDATE_LAST_USE(sock_idx);
@@ -267,7 +280,7 @@ int start(enum um_mode mode)
 
                     buflen = (size_t) ret;
 
-                    transform(buf, buflen, tlimit);
+                    buflen = (*rcv_buf_func)(buf, buflen);
                     sendto(bind_sock, (void *) buf, buflen, 0,
                            (struct sockaddr *) &map[i].from,
                            sizeof(map[i].from));
@@ -325,13 +338,6 @@ int main(int argc, char **argv)
             }
             break;
 
-        case 's':
-            r = load_mask(optarg);
-            if (r < 0) {
-                show_usage = 1;
-            }
-            break;
-
         case 'l':
             r = inet_pton(AF_INET, optarg, (void *) &addr);
             if (r == 0) {
@@ -378,10 +384,6 @@ int main(int argc, char **argv)
             pidfile = optarg;
             break;
 
-        case 'L':
-            tlimit = atoi(optarg);
-            break;
-
         case 'h':
         case '?':
         default:
@@ -390,7 +392,7 @@ int main(int argc, char **argv)
         }
     }
 
-    if (!mask_loaded || port_conn == 0 || addr_conn.s_addr == 0) {
+    if (port_conn == 0 || addr_conn.s_addr == 0) {
         show_usage = 1;
     }
 
@@ -493,8 +495,6 @@ int main(int argc, char **argv)
     log_info("Remote address [%s:%hu]", inet_ntoa(addr_conn), port_conn);
 
     ret = start(mode);
-
-    unload_mask();
 
 exit:
     close(bind_sock);

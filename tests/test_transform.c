@@ -3,28 +3,46 @@
 #include "transform.h"
 #include "udpmask.h"
 
-extern unsigned char *mask;
+extern unsigned char mask[MASK_LEN];
+
+void print_mask() {
+    printf("mask:");
+    for (int i = 0; i < MASK_LEN; i++) {
+        printf(" 0x%02X", mask[i]);
+    }
+    printf("\n");
+}
 
 int main(void)
 {
-    printf("MASK_BASE_LEN: %d\n", MASK_BASE_LEN);
     printf("MASK_LEN: %d\n", MASK_LEN);
+
+    check_gen_mask();
+
+    print_mask();
 
     unsigned char buf[1024] = "ABCDABCDABCDABCDCD";
     size_t buflen = 18;
 
-    load_mask("ABCD");
-
-    for (size_t i = 0; i < MASK_LEN; i++) {
-        printf("%c ", mask[i]);
+    printf("buf:");
+    for (size_t i = 0; i < buflen; i++) {
+        printf(" 0x%02X", buf[i]);
     }
     printf("\n");
 
-    transform(buf, buflen, -1);
-    unload_mask();
+    buflen = maskbuf(buf, buflen);
 
+    printf("maskbuf:");
     for (size_t i = 0; i < buflen; i++) {
-        printf("0x%02X ", buf[i]);
+        printf(" 0x%02X", buf[i]);
+    }
+    printf("\n");
+
+    buflen = unmaskbuf(buf, buflen);
+
+    printf("buf:");
+    for (size_t i = 0; i < buflen; i++) {
+        printf(" 0x%02X", buf[i]);
     }
     printf("\n");
 

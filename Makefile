@@ -12,7 +12,7 @@ $(EXEC): $(OBJS)
 %.o: %.c
 	$(CC) $(CFLAGS) -o $@ -c $<
 
-tests/test_%: tests/test_%.c %.o
+tests/test_%: tests/test_%.c %.o log.o
 	$(CC) $(CFLAGS) -I. -o $@ $^
 
 test: $(TESTS)

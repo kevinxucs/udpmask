@@ -1,59 +1,64 @@
+#include <errno.h>
+#include <fcntl.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
+#include <unistd.h>
 
+#include "log.h"
 #include "transform.h"
 
-unsigned char *mask = NULL;
-int mask_loaded = 0;
+unsigned char mask[MASK_LEN];
+time_t mask_updated = 0;
 
-int load_mask(const char *smask)
+void check_gen_mask()
 {
-    int smask_len = strlen(smask);
-
-    if (smask_len < 1) {
-        return -1;
+    time_t time_now = time(NULL);
+    if (time_now == -1) {
+        log_err("Failed to get current time");
+        return;
     }
 
-    mask = (unsigned char *) malloc(MASK_LEN);
-
-    for (size_t i = 0; i < MASK_LEN / MASK_BASE_LEN; i++) {
-        for (size_t j = 0; j < MASK_BASE_LEN; j++) {
-            mask[i * MASK_BASE_LEN + j] = (unsigned char) smask[j % smask_len];
-        }
+    if (time_now - mask_updated <= MASK_TIMEOUT) {
+        return;
     }
 
-    mask_loaded = 1;
+    log_debug("mask updated more than %s seconds ago", MASK_TIMEOUT);
 
-    return 0;
+    int fd = open("/dev/urandom", O_RDONLY);
+    if (fd < 0) {
+        log_err("open(): %s", strerror(errno));
+        return;
+    }
+
+    ssize_t ret = read(fd, mask, MASK_LEN);
+    if (ret < 0) {
+        log_err("read(): %s", strerror(errno));
+        return;
+    }
+
+    mask_updated = time_now;
 }
 
-void unload_mask(void)
-{
-    free(mask);
-    mask = NULL;
-    mask_loaded = 0;
+size_t maskbuf(unsigned char *buf, size_t buflen) {
+    check_gen_mask();
+
+    transform(buf, buflen, mask);
+
+    memcpy(buf + buflen, mask, MASK_LEN);
+
+    return buflen + MASK_LEN;
 }
 
-int transform(unsigned char *buf, size_t buflen, int tlimit)
-{
-    size_t bufplen;
+size_t unmaskbuf(unsigned char *buf, size_t buflen) {
+    unsigned char rcv_mask[MASK_LEN];
 
-    if (tlimit < 0) {
-        bufplen = buflen;
-    } else {
-        bufplen = (size_t) tlimit < buflen ? (size_t) tlimit : buflen;
-    }
+    size_t len = buflen - MASK_LEN;
 
-    // Mask
+    memcpy(rcv_mask, buf + len, MASK_LEN);
 
-    size_t bufplen_mask_chunk = bufplen / MASK_LEN;
-    for (size_t i = 0; i < bufplen_mask_chunk; i++) {
-        ((MASK_UNIT *) buf)[i] = XOR_FUNC(((MASK_UNIT *) buf)[i], *((MASK_UNIT *) mask));
-    }
+    transform(buf, len, rcv_mask);
 
-    for (size_t i = bufplen_mask_chunk * MASK_LEN; i < bufplen; i++) {
-        buf[i] ^= mask[i % MASK_LEN];
-    }
-
-    return 0;
+    return len;
 }
