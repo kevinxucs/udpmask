@@ -28,7 +28,7 @@ static volatile sig_atomic_t signal_term = 0;
 static int usage(void)
 {
     const char ubuf[] =
-    "Usage: udpmask -m mode -s mask\n"
+    "Usage: udpmask -m mode\n"
     "               -c remote -o remote_port\n"
     "               [-l listen] [-p listen_port]\n"
     "               [-t timeout] [-d] [-P pidfile]\n"
