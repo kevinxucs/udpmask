@@ -7,7 +7,7 @@
 #define UM_SERVER_PORT  51194
 #define UM_CLIENT_PORT  61194
 #define UM_MAX_CLIENT   16
-#define UM_BUFFER       65536
+#define UM_BUFFER       65507
 #define UM_TIMEOUT      300     // 5 minutes
 
 #define TIME_INVALID    (time_t) -1
