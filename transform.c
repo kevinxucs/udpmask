@@ -35,10 +35,14 @@ void check_gen_mask()
     ssize_t ret = read(fd, mask, MASK_LEN);
     if (ret < 0) {
         log_err("read(): %s", strerror(errno));
-        return;
+        goto close;
     }
 
     mask_updated = time_now;
+
+close:
+    close(fd);
+    return;
 }
 
 size_t maskbuf(unsigned char *buf, size_t buflen) {
