@@ -1,7 +1,8 @@
 # udpmask
 
 Minimal UDP packet obfuscation tool for bypassing government level deep
-packet inspection.
+packet inspection. No external dependencies (including pthread), can be
+compiled to run in embedded devices.
 
 ## Usage
 
