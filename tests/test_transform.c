@@ -37,8 +37,29 @@ int main(void)
     check_gen_mask(&tran);
     print_mask(&tran);
 
-    unsigned char buf[1024] = "ABCDABCDABCDABCDCD";
-    size_t buflen = 18;
+    unsigned char buf[1024] = {
+        'A', 'B', 'C', 'D', 'A', 'B', 'C', 'D', 'A', 'B',
+        'A', 'B', 'C', 'D', 'A', 'B', 'C', 'D', 'A', 'B',
+        'A', 'B', 'C', 'D', 'A', 'B', 'C', 'D', 'A', 'B',
+        'A', 'B', 'C', 'D', 'A', 'B', 'C', 'D', 'A', 'B',
+        'A', 'B', 'C', 'D', 'A', 'B', 'C', 'D', 'A', 'B',
+        'A', 'B', 'C', 'D', 'A', 'B', 'C', 'D', 'A', 'B',
+        'A', 'B', 'C', 'D', 'A', 'B', 'C', 'D', 'A', 'B',
+        'A', 'B', 'C', 'D', 'A', 'B', 'C', 'D', 'A', 'B',
+        'A', 'B', 'C', 'D', 'A', 'B', 'C', 'D', 'A', 'B',
+        'A', 'B', 'C', 'D', 'A', 'B', 'C', 'D', 'A', 'B',
+        'A', 'B', 'C', 'D', 'A', 'B', 'C', 'D', 'A', 'B',
+        'A', 'B', 'C', 'D', 'A', 'B', 'C', 'D', 'A', 'B',
+        'A', 'B', 'C', 'D', 'A', 'B', 'C', 'D', 'A', 'B',
+        'A', 'B', 'C', 'D', 'A', 'B', 'C', 'D', 'A', 'B',
+        'A', 'B', 'C', 'D', 'A', 'B', 'C', 'D', 'A', 'B',
+        'A', 'B', 'C', 'D', 'A', 'B', 'C', 'D', 'A', 'B',
+        'A', 'B', 'C', 'D', 'A', 'B', 'C', 'D', 'A', 'B',
+        'A', 'B', 'C', 'D', 'A', 'B', 'C', 'D', 'A', 'B',
+        'A', 'B', 'C', 'D', 'A', 'B', 'C', 'D', 'A', 'B',
+        'A', 'B', 'C', 'D', 'A', 'B', 'C', 'D', 'A', 'B',
+    };
+    size_t buflen = strlen((const char *) buf);
 
     printf("buf:");
     for (size_t i = 0; i < buflen; i++) {
