@@ -16,7 +16,7 @@ void check_gen_mask(struct um_transform *ctx)
         return;
     }
 
-    log_debug("mask used more than %s times ago, update", MASK_MAXCT);
+    log_debug("mask used more than %u times ago, update", MASK_MAXCT);
 
     int fd = open("/dev/urandom", O_RDONLY);
     if (fd < 0) {
