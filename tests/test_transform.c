@@ -27,7 +27,7 @@ int main(void)
     gettimeofday(&t_start, NULL);
     for (int i = 0; i < iter; i++) {
         check_gen_mask(&tran);
-        tran.mask_updated = 0;
+        tran.mask_ct = MASK_MAXCT;
     }
     gettimeofday(&t_end, NULL);
     t_diff = (double) ((t_end.tv_sec - t_start.tv_sec) * 1e6 + (t_end.tv_usec - t_start.tv_usec));

@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 #include <unistd.h>
 
 #include "log.h"
@@ -11,17 +10,13 @@
 
 void check_gen_mask(struct um_transform *ctx)
 {
-    time_t time_now = time(NULL);
-    if (time_now == -1) {
-        log_err("Failed to get current time");
+    log_debug("mask used %d times", ctx->mask_ct);
+
+    if (ctx->mask_ct++ < MASK_MAXCT) {
         return;
     }
 
-    if (time_now - ctx->mask_updated <= MASK_TIMEOUT) {
-        return;
-    }
-
-    log_debug("mask updated more than %s seconds ago", MASK_TIMEOUT);
+    log_debug("mask used more than %s times ago, update", MASK_MAXCT);
 
     int fd = open("/dev/urandom", O_RDONLY);
     if (fd < 0) {
@@ -35,7 +30,7 @@ void check_gen_mask(struct um_transform *ctx)
         goto close;
     }
 
-    ctx->mask_updated = time_now;
+    ctx->mask_ct = 0;
 
 close:
     close(fd);

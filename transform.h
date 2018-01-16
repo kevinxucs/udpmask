@@ -3,15 +3,14 @@
 
 #include <stdint.h>
 #include <stdlib.h>
-#include <time.h>
 
 #define MASK_UNIT       uint32_t
 #define MASK_LEN        ((int) sizeof(MASK_UNIT))
-#define MASK_TIMEOUT    ((time_t) 60)
+#define MASK_MAXCT      ((unsigned int) 100000)
 
 struct um_transform {
     unsigned char   mask[MASK_LEN];
-    time_t          mask_updated;
+    unsigned int    mask_ct;
 };
 
 #define transform(buf, buflen, m)                               \
