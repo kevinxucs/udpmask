@@ -19,7 +19,10 @@
 #include "udpmask.h"
 
 static int bind_sock = -1;
-static struct sockaddr_in conn_addr;
+
+static char host_conn[256];
+static uint16_t port_conn = 0;
+
 static int timeout = UM_TIMEOUT;
 static struct um_sockmap map[UM_MAX_CLIENT];
 
@@ -171,6 +174,14 @@ int start(enum um_mode mode)
     int sock_idx;
     int tmp_sock = -1;
 
+    struct addrinfo hints, *res;
+    int rv;
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_DGRAM;
+
+    struct sockaddr_in conn_addr;
+
     struct sockaddr_in recv_addr;
     socklen_t recv_addr_len = sizeof(recv_addr);
 
@@ -247,9 +258,6 @@ int start(enum um_mode mode)
                         if (sock_idx >= 0) {
                             // Inserted newly created socket into sockmap
                             FD_SET(tmp_sock, &active_fd_set);
-                            connect(tmp_sock, (struct sockaddr *) &conn_addr,
-                                    sizeof(conn_addr));
-                            
                             UPDATE_SOCK_FD_MAX_ADD(tmp_sock);
                         } else {
                             // Failed to insert newly created socket into sockmap
@@ -263,10 +271,20 @@ int start(enum um_mode mode)
                 
                 // Check sock_idx again to deal with new connection
                 if (sock_idx >= 0) {
-                    buflen = (*snd_buf_func)(buf, buflen);
-                    send(map[sock_idx].sock, (void *) buf, buflen, 0);
+                    if ((rv = getaddrinfo(host_conn, NULL, &hints, &res)) == 0) {
+                        memcpy((void *) &conn_addr, (void *) res->ai_addr,
+                               sizeof(conn_addr));
+                        conn_addr.sin_port = htons(port_conn);
+                        freeaddrinfo(res);
 
-                    UPDATE_LAST_USE(sock_idx);
+                        buflen = (*snd_buf_func)(buf, buflen);
+                        sendto(map[sock_idx].sock, (void *) buf, buflen, 0,
+                               (struct sockaddr *) &conn_addr,
+                               sizeof(conn_addr));
+                        UPDATE_LAST_USE(sock_idx);
+                    } else {
+                        log_err("getaddrinfo(): %s", gai_strerror(rv));
+                    }
                 }
             }
         }
@@ -308,20 +326,17 @@ int main(int argc, char **argv)
 {
     int ret = 0;
 
-    memset((void *) &conn_addr, 0, sizeof(conn_addr));
+    memset((void *) host_conn, '\0', sizeof(host_conn));
     memset((void *) map, 0, sizeof(map));
 
     enum um_mode mode = UM_MODE_NONE;
     struct in_addr addr = { .s_addr = INADDR_ANY };
     uint16_t port = 0;
-    struct in_addr addr_conn = { .s_addr = 0 };
-    uint16_t port_conn = 0;
 
     struct sockaddr_in bind_addr;
     memset((void *) &bind_addr, 0, sizeof(bind_addr));
 
     const char *pidfile = 0;
-    struct hostent * rh;
     int show_usage = 0, daemonize = 0;
     int c;
     int r;
@@ -354,15 +369,7 @@ int main(int argc, char **argv)
             break;
 
         case 'c':
-            rh = gethostbyname2(optarg, AF_INET);
-            if (!rh) {
-                herror("gethostbyname2()");
-                ret = 1;
-                goto exit;
-            } else {
-                memcpy(&addr_conn, rh->h_addr_list[0], rh->h_length);
-            }
-
+            strncpy(host_conn, optarg, strlen(optarg));
             break;
 
         case 'o':
@@ -392,7 +399,7 @@ int main(int argc, char **argv)
         }
     }
 
-    if (port_conn == 0 || addr_conn.s_addr == 0) {
+    if (port_conn == 0 || strlen(host_conn) == 0) {
         show_usage = 1;
     }
 
@@ -488,11 +495,7 @@ int main(int argc, char **argv)
         goto exit;
     }
 
-    conn_addr.sin_family = AF_INET;
-    conn_addr.sin_addr = addr_conn;
-    conn_addr.sin_port = htons(port_conn);
-
-    log_info("Remote address [%s:%hu]", inet_ntoa(addr_conn), port_conn);
+    log_info("Remote address [%s:%hu]", host_conn, port_conn);
 
     ret = start(mode);
 
