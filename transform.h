@@ -9,6 +9,11 @@
 #define MASK_LEN        ((int) sizeof(MASK_UNIT))
 #define MASK_TIMEOUT    ((time_t) 60)
 
+struct um_transform {
+    unsigned char   mask[MASK_LEN];
+    time_t          mask_updated;
+};
+
 #define transform(buf, buflen, m)                               \
     do {                                                        \
         size_t c = buflen / MASK_LEN;                           \
@@ -20,10 +25,10 @@
         }                                                       \
     } while (0)                                                 \
 
-void check_gen_mask();
-size_t maskbuf(unsigned char *, size_t);
-size_t unmaskbuf(unsigned char *, size_t);
+void check_gen_mask(struct um_transform *);
+size_t maskbuf(struct um_transform *, unsigned char *, size_t);
+size_t unmaskbuf(struct um_transform *, unsigned char *, size_t);
 
-typedef size_t (*buf_func)(unsigned char *, size_t);
+typedef size_t (*buf_func)(struct um_transform *, unsigned char *, size_t);
 
 #endif /* _incl_TRANSFORM_H */

@@ -1,25 +1,27 @@
 #include <stdio.h>
+#include <string.h>
 
 #include "transform.h"
 #include "udpmask.h"
 
-extern unsigned char mask[MASK_LEN];
-
-void print_mask() {
+void print_mask(struct um_transform *ctx) {
     printf("mask:");
     for (int i = 0; i < MASK_LEN; i++) {
-        printf(" 0x%02X", mask[i]);
+        printf(" 0x%02X", ctx->mask[i]);
     }
     printf("\n");
 }
 
 int main(void)
 {
+    struct um_transform tran;
+    memset(&tran, 0, sizeof(tran));
+
     printf("MASK_LEN: %d\n", MASK_LEN);
 
-    check_gen_mask();
+    check_gen_mask(&tran);
 
-    print_mask();
+    print_mask(&tran);
 
     unsigned char buf[1024] = "ABCDABCDABCDABCDCD";
     size_t buflen = 18;
@@ -30,7 +32,7 @@ int main(void)
     }
     printf("\n");
 
-    buflen = maskbuf(buf, buflen);
+    buflen = maskbuf(&tran, buf, buflen);
 
     printf("maskbuf:");
     for (size_t i = 0; i < buflen; i++) {
@@ -38,7 +40,7 @@ int main(void)
     }
     printf("\n");
 
-    buflen = unmaskbuf(buf, buflen);
+    buflen = unmaskbuf(&tran, buf, buflen);
 
     printf("buf:");
     for (size_t i = 0; i < buflen; i++) {

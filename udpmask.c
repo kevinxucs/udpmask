@@ -169,6 +169,9 @@ static void sighanlder(int signum)
 // Main loop
 int start(enum um_mode mode)
 {
+    struct um_transform tran;
+    memset(&tran, 0, sizeof(tran));
+
     ssize_t ret;
     int select_ret;
     int sock_idx;
@@ -277,7 +280,7 @@ int start(enum um_mode mode)
                         conn_addr.sin_port = htons(port_conn);
                         freeaddrinfo(res);
 
-                        buflen = (*snd_buf_func)(buf, buflen);
+                        buflen = (*snd_buf_func)(&tran, buf, buflen);
                         sendto(map[sock_idx].sock, (void *) buf, buflen, 0,
                                (struct sockaddr *) &conn_addr,
                                sizeof(conn_addr));
@@ -298,7 +301,7 @@ int start(enum um_mode mode)
 
                     buflen = (size_t) ret;
 
-                    buflen = (*rcv_buf_func)(buf, buflen);
+                    buflen = (*rcv_buf_func)(&tran, buf, buflen);
                     sendto(bind_sock, (void *) buf, buflen, 0,
                            (struct sockaddr *) &map[i].from,
                            sizeof(map[i].from));

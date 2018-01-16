@@ -9,10 +9,7 @@
 #include "log.h"
 #include "transform.h"
 
-unsigned char mask[MASK_LEN];
-time_t mask_updated = 0;
-
-void check_gen_mask()
+void check_gen_mask(struct um_transform *ctx)
 {
     time_t time_now = time(NULL);
     if (time_now == -1) {
@@ -20,7 +17,7 @@ void check_gen_mask()
         return;
     }
 
-    if (time_now - mask_updated <= MASK_TIMEOUT) {
+    if (time_now - ctx->mask_updated <= MASK_TIMEOUT) {
         return;
     }
 
@@ -32,36 +29,33 @@ void check_gen_mask()
         return;
     }
 
-    ssize_t ret = read(fd, mask, MASK_LEN);
+    ssize_t ret = read(fd, ctx->mask, MASK_LEN);
     if (ret < 0) {
         log_err("read(): %s", strerror(errno));
         goto close;
     }
 
-    mask_updated = time_now;
+    ctx->mask_updated = time_now;
 
 close:
     close(fd);
     return;
 }
 
-size_t maskbuf(unsigned char *buf, size_t buflen) {
-    check_gen_mask();
+size_t maskbuf(struct um_transform *ctx, unsigned char *buf, size_t buflen) {
+    check_gen_mask(ctx);
 
-    transform(buf, buflen, mask);
-
-    memcpy(buf + buflen, mask, MASK_LEN);
+    transform(buf, buflen, ctx->mask);
+    memcpy(buf + buflen, ctx->mask, MASK_LEN);
 
     return buflen + MASK_LEN;
 }
 
-size_t unmaskbuf(unsigned char *buf, size_t buflen) {
+size_t unmaskbuf(struct um_transform *ctx, unsigned char *buf, size_t buflen) {
     unsigned char rcv_mask[MASK_LEN];
-
     size_t len = buflen - MASK_LEN;
 
     memcpy(rcv_mask, buf + len, MASK_LEN);
-
     transform(buf, len, rcv_mask);
 
     return len;
