@@ -276,16 +276,16 @@ int start(enum um_mode mode)
                     rh = gethostbyname2(host_conn, AF_INET);
                     if (!rh) {
                         herror("gethostbyname2()");
+                    } else {
+                        memcpy(&conn_addr_in, rh->h_addr_list[0], rh->h_length);
+                        conn_addr.sin_addr = conn_addr_in;
+
+                        buflen = (*snd_buf_func)(&tran, buf, buflen);
+                        sendto(map[sock_idx].sock, (void *) buf, buflen, 0,
+                               (struct sockaddr *) &conn_addr,
+                               sizeof(conn_addr));
+                        UPDATE_LAST_USE(sock_idx);
                     }
-
-                    memcpy(&conn_addr_in, rh->h_addr_list[0], rh->h_length);
-                    conn_addr.sin_addr = conn_addr_in;
-
-                    buflen = (*snd_buf_func)(&tran, buf, buflen);
-                    sendto(map[sock_idx].sock, (void *) buf, buflen, 0,
-                           (struct sockaddr *) &conn_addr,
-                           sizeof(conn_addr));
-                    UPDATE_LAST_USE(sock_idx);
                 }
             }
         }
