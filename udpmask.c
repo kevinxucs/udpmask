@@ -76,9 +76,8 @@ static inline void update_sock_fd_max(void)
 // um_sockmap
 /////////////////////////////////////////////////////////////////////
 
-#define UPDATE_LAST_USE(idx)                    \
+#define UPDATE_LAST_USE(idx, time_val)          \
     do {                                        \
-        time_t time_val = time(NULL);           \
         if (time_val != TIME_INVALID) {         \
             map[idx].last_use = time_val;       \
         }                                       \
@@ -105,7 +104,7 @@ static inline int um_sockmap_ins(int sock, struct sockaddr_in *addr)
     return i;
 }
 
-static inline int um_sockmap_clean(fd_set *active_set)
+static inline int um_sockmap_clean(fd_set *active_set, time_t time_val)
 {
     int purged = 0;
 
@@ -113,7 +112,6 @@ static inline int um_sockmap_clean(fd_set *active_set)
         return purged;
     }
 
-    time_t time_val = time(NULL);
     for (int i = 0; i < ARRAY_SIZE(map); i++) {
         if (map[i].in_use && (map[i].last_use == TIME_INVALID ||
             time_val - map[i].last_use >= timeout)) {
@@ -205,13 +203,13 @@ int start(enum um_mode mode)
     }
 
     fd_set active_fd_set, read_fd_set;
-
     FD_ZERO(&active_fd_set);
     FD_SET(bind_sock, &active_fd_set);
 
-    log_info("Connection timeout %d", timeout);
+    log_info("Connection timeout %ds", timeout);
 
     int clean_up_trigged;
+    time_t time_val;
 
     update_sock_fd_max();
 
@@ -226,6 +224,8 @@ int start(enum um_mode mode)
             log_debug("select() returns %d", select_ret);
             continue;
         }
+
+        time_val = time(NULL);
 
         if (FD_ISSET(bind_sock, &read_fd_set)) {
             // Deal with packets from "listening" socket
@@ -253,7 +253,7 @@ int start(enum um_mode mode)
                     if (tmp_sock < 0) {
                         log_err("socket(): %s", strerror(errno));
                     } else {
-                        um_sockmap_clean(&active_fd_set);
+                        um_sockmap_clean(&active_fd_set, time_val);
                         clean_up_trigged = 1;
 
                         sock_idx = um_sockmap_ins(tmp_sock, &recv_addr);
@@ -284,7 +284,7 @@ int start(enum um_mode mode)
                         sendto(map[sock_idx].sock, (void *) buf, buflen, 0,
                                (struct sockaddr *) &conn_addr,
                                sizeof(conn_addr));
-                        UPDATE_LAST_USE(sock_idx);
+                        UPDATE_LAST_USE(sock_idx, time_val);
                     }
                 }
             }
@@ -295,7 +295,7 @@ int start(enum um_mode mode)
                 ret = recv(map[i].sock, (void *) buf, UM_BUFFER, 0);
 
                 if (ret > 0) {
-                    UPDATE_LAST_USE(i);
+                    UPDATE_LAST_USE(i, time_val);
 
                     buflen = (size_t) ret;
 
@@ -308,7 +308,7 @@ int start(enum um_mode mode)
         }
 
         if (!clean_up_trigged) {
-            um_sockmap_clean(&active_fd_set);
+            um_sockmap_clean(&active_fd_set, time_val);
         }
     }
 
