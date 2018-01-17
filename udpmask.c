@@ -175,12 +175,18 @@ int start(enum um_mode mode)
     int sock_idx;
     int tmp_sock = -1;
 
-    struct hostent * rh;
-    struct in_addr conn_addr_in = { .s_addr = 0 };
+    struct hostent *rh;
+    struct in_addr conn_addr_in = {
+        .s_addr = 0,
+    };
     struct sockaddr_in conn_addr = {
         .sin_family = AF_INET,
-        .sin_port = htons(port_conn)
+        .sin_port = htons(port_conn),
+        .sin_addr = {
+            .s_addr = 0,
+        },
     };
+    time_t time_conn_addr = 0;
 
     struct sockaddr_in recv_addr;
     socklen_t recv_addr_len = sizeof(recv_addr);
@@ -273,19 +279,24 @@ int start(enum um_mode mode)
                 
                 // Check sock_idx again to deal with new connection
                 if (sock_idx >= 0) {
-                    rh = gethostbyname2(host_conn, AF_INET);
-                    if (!rh) {
-                        herror("gethostbyname2()");
-                    } else {
-                        memcpy(&conn_addr_in, rh->h_addr_list[0], rh->h_length);
-                        conn_addr.sin_addr = conn_addr_in;
-
-                        buflen = (*snd_buf_func)(&tran, buf, buflen);
-                        sendto(map[sock_idx].sock, (void *) buf, buflen, 0,
-                               (struct sockaddr *) &conn_addr,
-                               sizeof(conn_addr));
-                        UPDATE_LAST_USE(sock_idx, time_val);
+                    if (time_val - time_conn_addr >= UM_HOST_TIMEOUT ||
+                        conn_addr.sin_addr.s_addr == 0) {
+                        rh = gethostbyname2(host_conn, AF_INET);
+                        if (!rh) {
+                            herror("gethostbyname2()");
+                        } else {
+                            memcpy(&conn_addr_in, rh->h_addr_list[0],
+                                   rh->h_length);
+                            conn_addr.sin_addr = conn_addr_in;
+                            time_conn_addr = time_val;
+                        }
                     }
+
+                    buflen = (*snd_buf_func)(&tran, buf, buflen);
+                    sendto(map[sock_idx].sock, (void *) buf, buflen, 0,
+                           (struct sockaddr *) &conn_addr,
+                           sizeof(conn_addr));
+                    UPDATE_LAST_USE(sock_idx, time_val);
                 }
             }
         }
