@@ -203,6 +203,9 @@ int start(enum um_mode mode)
     } else if (mode == UM_MODE_CLIENT) {
         snd_buf_func = &maskbuf;
         rcv_buf_func = &unmaskbuf;
+    } else if (mode == UM_MODE_PASSTHROU) {
+        snd_buf_func = &masknoop;
+        rcv_buf_func = &masknoop;
     } else {
         log_err("Unknown mode");
         return 1;
@@ -360,6 +363,8 @@ int main(int argc, char **argv)
                 mode = UM_MODE_SERVER;
             } else if (strcmp(optarg, "client") == 0) {
                 mode = UM_MODE_CLIENT;
+            } else if (strcmp(optarg, "passthrough") == 0) {
+                mode = UM_MODE_PASSTHROU;
             } else {
                 show_usage = 1;
             }

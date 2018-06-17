@@ -55,3 +55,7 @@ size_t unmaskbuf(struct um_transform *ctx, unsigned char *buf, size_t buflen) {
 
     return len;
 }
+
+size_t masknoop(struct um_transform * ctx, unsigned char *buf, size_t buflen) {
+    return buflen;
+}

@@ -27,6 +27,7 @@ struct um_transform {
 void check_gen_mask(struct um_transform *);
 size_t maskbuf(struct um_transform *, unsigned char *, size_t);
 size_t unmaskbuf(struct um_transform *, unsigned char *, size_t);
+size_t masknoop(struct um_transform *, unsigned char *, size_t);
 
 typedef size_t (*buf_func)(struct um_transform *, unsigned char *, size_t);
 
