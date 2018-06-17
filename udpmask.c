@@ -440,6 +440,12 @@ int main(int argc, char **argv)
         }
         break;
 
+    case UM_MODE_PASSTHROU:
+        if (port == 0) {
+            port = UM_SERVER_PORT;
+        }
+        break;
+
     default:
         show_usage = 1;
         break;
