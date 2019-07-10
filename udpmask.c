@@ -339,6 +339,8 @@ int start(enum um_mode mode)
 
 int main(int argc, char **argv)
 {
+    srand(time(0));
+
     int ret = 0;
 
     memset((void *) host_conn, '\0', sizeof(host_conn));

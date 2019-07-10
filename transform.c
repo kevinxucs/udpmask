@@ -18,23 +18,8 @@ void check_gen_mask(struct um_transform *ctx)
 
     log_debug("mask used more than %u times ago, update", MASK_MAXCT);
 
-    int fd = open("/dev/urandom", O_RDONLY);
-    if (fd < 0) {
-        log_err("open(): %s", strerror(errno));
-        return;
-    }
-
-    ssize_t ret = read(fd, ctx->mask, MASK_LEN);
-    if (ret < 0) {
-        log_err("read(): %s", strerror(errno));
-        goto close;
-    }
-
+    genmask(ctx->mask, MASK_LEN);
     ctx->mask_ct = 0;
-
-close:
-    close(fd);
-    return;
 }
 
 size_t maskbuf(struct um_transform *ctx, unsigned char *buf, size_t buflen) {
