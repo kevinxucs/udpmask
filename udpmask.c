@@ -168,7 +168,9 @@ static void sighanlder(int signum)
 int start(enum um_mode mode)
 {
     struct um_transform tran;
+
     memset(&tran, 0, sizeof(tran));
+    genmask(tran.mask, MASK_LEN);
 
     ssize_t ret;
     int select_ret;
