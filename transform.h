@@ -28,7 +28,10 @@ struct um_transform {
 #define genmask(mask, n)                                        \
     do {                                                        \
         for (size_t i = 0; i < n; i++) {                        \
-            mask[i] = (unsigned char) (rand() % 256);           \
+            for (int j = 0; j < 10; j++) {                      \
+                mask[i] = (unsigned char) (rand() % 256);       \
+                if (mask[i] != 0) break;                        \
+            }                                                   \
         }                                                       \
     } while (0)                                                 \
 
