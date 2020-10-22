@@ -199,16 +199,17 @@ int start(enum um_mode mode)
     buf_func snd_buf_func;
     buf_func rcv_buf_func;
 
-    if (mode == UM_MODE_SERVER) {
+    switch (mode) {
+    case UM_MODE_SERVER:
         snd_buf_func = &unmaskbuf;
         rcv_buf_func = &maskbuf;
-    } else if (mode == UM_MODE_CLIENT) {
+    case UM_MODE_CLIENT:
         snd_buf_func = &maskbuf;
         rcv_buf_func = &unmaskbuf;
-    } else if (mode == UM_MODE_PASSTHROU) {
+    case UM_MODE_PASSTHROU:
         snd_buf_func = &masknoop;
         rcv_buf_func = &masknoop;
-    } else {
+    default:
         log_err("Unknown mode");
         return 1;
     }
