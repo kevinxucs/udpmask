@@ -35,7 +35,7 @@ static int usage(void)
     "               -c remote -o remote_port\n"
     "               [-l listen] [-p listen_port]\n"
     "               [-t timeout] [-d] [-P pidfile]\n"
-    "               [-L mask limit] [-h]\n";
+    "               [-h]\n";
     fprintf(stderr, ubuf);
     return 1;
 }
