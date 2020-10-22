@@ -1,8 +1,8 @@
 # udpmask
 
-Minimal UDP packet obfuscation tool for bypassing government level deep
-packet inspection. No external dependencies (including pthread), can be
-compiled to run in embedded devices.
+Minimal UDP packet obfuscation tool for bypassing deep packet inspection.
+No external dependencies (including pthread), can be compiled to run on
+embedded devices.
 
 ## Usage
 
@@ -20,3 +20,4 @@ connect to localhost:61194.
 ## Use case
 
 * Obfuscate OpenVPN UDP traffic
+* Obfuscate WireGuard traffic
