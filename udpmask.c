@@ -203,12 +203,15 @@ int start(enum um_mode mode)
     case UM_MODE_SERVER:
         snd_buf_func = &unmaskbuf;
         rcv_buf_func = &maskbuf;
+        break;
     case UM_MODE_CLIENT:
         snd_buf_func = &maskbuf;
         rcv_buf_func = &unmaskbuf;
+        break;
     case UM_MODE_PASSTHROU:
         snd_buf_func = &masknoop;
         rcv_buf_func = &masknoop;
+        break;
     default:
         log_err("Unknown mode");
         return 1;
